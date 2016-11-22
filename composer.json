@@ -1,0 +1,21 @@
+{
+  "name": "dezmont765/yii2-bundle",
+  "description": "Bundle of useful utilities and components for Yii2 driven applications",
+  "keywords": ["yii", "extension", "bundle", "components"],
+  "type": "library",
+  "authors": [
+    {
+      "name": "ChubbyDuck",
+      "email": "kosstik7@gmail.com"
+    }
+  ],
+  "require": {
+    "yiisoft/yii2": "*",
+    "yiisoft/yii2-bootstrap": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "dezmont765\\yii2bundle\\": ""
+    }
+  }
+}
