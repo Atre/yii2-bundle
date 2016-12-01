@@ -57,6 +57,7 @@ class MainController extends Controller
             else {
                 throw new ForbiddenHttpException(Yii::t('yii', 'You are not allowed to perform this action.'));
             }
+            return false;
         }
     }
 

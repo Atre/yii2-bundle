@@ -1,8 +1,8 @@
 <?php
 namespace app\components;
 
-use app\helpers\Helper;
-use app\models\MainActiveRecord;
+use dezmont765\components\Encryption;
+use dezmont765\yii2bundle\models\MainActiveRecord;
 use Yii;
 use yii\base\Behavior;
 use yii\base\InvalidParamException;

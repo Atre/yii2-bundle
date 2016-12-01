@@ -7,8 +7,8 @@
  */
 namespace dezmont765\yii2bundle\models;
 
-use dezmont765\yii2bundle\components\Alert;
 use DateTime;
+use dezmont765\yii2bundle\components\Alert;
 use Exception;
 use Yii;
 use yii\db\ActiveRecord;
@@ -101,22 +101,28 @@ class MainActiveRecord extends ActiveRecord
     }
 
 
+    /**
+     * Commits current local transaction
+     */
     protected function commitLocalTransaction() {
-        if(self::isLocalTransactionAccessible()) {
+        if($this->isLocalTransactionAccessible()) {
             $this->transaction->commit();
         }
     }
 
 
+    /**
+     * rollback current local transaction
+     */
     protected function rollbackLocalTransaction() {
-        if(self::isLocalTransactionAccessible()) {
+        if($this->isLocalTransactionAccessible()) {
             $this->transaction->rollBack();
         }
     }
 
 
     protected function isLocalTransactionAccessible() {
-        $is_accessible = !is_null($this->transaction);
+        $is_accessible = !is_null($this->transaction) && $this->transaction->isActive;
         return $is_accessible;
     }
 
