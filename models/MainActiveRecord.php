@@ -189,6 +189,11 @@ class MainActiveRecord extends ActiveRecord
         return $model->formName();
     }
 
+    public function _className() {
+        $class = get_called_class();
+        return $class;
+    }
+
 
     public static function getPrefixedAttribute($attribute) {
         return static::_formName() . '_' . $attribute;

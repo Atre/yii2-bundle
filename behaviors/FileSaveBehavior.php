@@ -1,5 +1,5 @@
 <?php
-namespace dezmont765\yii2bundle\components;
+namespace dezmont765\yii2bundle\behaviors;
 
 use dezmont765\components\Encryption;
 use dezmont765\yii2bundle\models\MainActiveRecord;
