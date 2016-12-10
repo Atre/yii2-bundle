@@ -21,13 +21,17 @@ trait TSearch
      * @return ActiveDataProvider
      * @internal param array $params
      */
-    public function search(ActiveQuery $query, array $additional_sorting, $default_order) {
+    public function search(ActiveQuery $query = null, array $additional_sorting = [], $default_order = null) {
+        iF($query == null) {
+            $query = self::find();
+        }
         $data_provider = new ActiveDataProvider([
                                                     'query' => $query,
                                                     'pagination' => ['pageSize' => 15]
                                                 ]);
         $data_provider->sort->attributes += $additional_sorting;
-        $data_provider->sort->defaultOrder = $default_order;
+        if($default_order !== null)
+            $data_provider->sort->defaultOrder = $default_order;
         return $data_provider;
     }
 }

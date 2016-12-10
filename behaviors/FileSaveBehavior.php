@@ -1,5 +1,5 @@
 <?php
-namespace app\components;
+namespace dezmont765\yii2bundle\components;
 
 use dezmont765\components\Encryption;
 use dezmont765\yii2bundle\models\MainActiveRecord;
@@ -275,7 +275,7 @@ class FileSaveBehavior extends Behavior
             FileHelper::createDirectory($file_save_path);
         }
         if($backend_view_dir !== null) {
-            if(!Helper::_is_link($backend_view_dir)) {
+            if(!self::_is_link($backend_view_dir)) {
                 if(is_dir($backend_view_dir)) {
                     FileHelper::removeDirectory($backend_view_dir);
                 }
@@ -283,13 +283,24 @@ class FileSaveBehavior extends Behavior
             }
         }
         if($frontend_view_dir !== null) {
-            if(!Helper::_is_link($frontend_view_dir)) {
+            if(!self::_is_link($frontend_view_dir)) {
                 if(is_dir($frontend_view_dir)) {
                     FileHelper::removeDirectory($frontend_view_dir);
                 }
                 symlink($file_save_path, $frontend_view_dir);
             }
         }
+    }
+
+    public static function _is_link($target) {
+        if(is_link($target)) {
+            return true;
+        }
+        $real_path = realpath($target);
+        if($real_path && $real_path !== $target) {
+            return true;
+        }
+        return false;
     }
 
 
@@ -309,6 +320,7 @@ class FileSaveBehavior extends Behavior
                 $store_relation_attribute = $this->file_attributes[$attribute][self::STORE_RELATION_ATTRIBUTE];
                 foreach($instances as $instance) {
                     if($instance instanceof UploadedFile) {
+                        /** @var MainActiveRecord $store_model */
                         $store_model = new $store_model_class;
                         $file_name = $this->getFileName();
                         $file_extension = $instance->extension;
@@ -492,6 +504,20 @@ class FileSaveBehavior extends Behavior
             $result = $this->getFileByName($this->owner->$file_attribute,$file_attribute,$scheme);
         }
         return $result;
+    }
+
+    public function getFilePhysicalPath($file_attribute) {
+        return $this->getFileSavePath($file_attribute) . $this->owner->$file_attribute;
+    }
+
+
+    public function deleteFile($file_attribute) {
+        if($this->removeFile($this->getFilePhysicalPath($file_attribute))) {
+            $this->owner->$file_attribute = null;
+            $this->owner->updateAttributes([$file_attribute]);
+            return true;
+        }
+        else return false;
     }
     
     public function getFileByName($name,$attribute,$scheme = false) {

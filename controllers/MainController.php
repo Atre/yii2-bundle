@@ -172,4 +172,9 @@ class MainController extends Controller
         }
         return $result;
     }
+
+
+    public function getModelClass() {
+        return '';
+    }
 }
