@@ -92,7 +92,7 @@ class ModelBindingBehavior extends Behavior
                 $bound_model = $binding_model_query->one();
             }
             if($bound_model instanceof $this->binding_stores[$attribute][self::BINDING_MODEL_CLASS]) {
-                $result = $bound_model->{$this->binding_stores[$attribute][self::BINDING_ATTRIBUTE]};
+                $result = $this->owner->$store_attribute =  $bound_model->{$this->binding_stores[$attribute][self::BINDING_ATTRIBUTE]};
                 return $result;
             }
             else {

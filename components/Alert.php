@@ -12,58 +12,77 @@
  */
 namespace dezmont765\yii2bundle\components;
 
+use dezmont765\yii2bundle\views\MainView;
+use dezmont765\yii2bundle\widgets\alert\AlertWidget;
 use Exception;
 use RecursiveArrayIterator;
 use RecursiveIteratorIterator;
 use yii;
 use yii\base\ErrorException;
-use yii\web\Request;
 
-class Alert
+class Alert extends yii\base\Component
 {
+    public $viewType = self::NORMAL_VIEW;
+    const NORMAL_VIEW = 'alertView';
+    const DETAILED_VIEW = 'alertSmallView';
+
+
+    public function init() {
+        Yii::$app->on('afterRequest', function () {
+            $this->flashAlerts();
+        });
+    }
+
+
+    public function flashAlerts() {
+        foreach(self::$stores as $key => $store) {
+            Yii::$app->session->setFlash($store, self::getAlertStoreByStatus($key));
+        }
+    }
+
+
+    public static $alerts = [];
 
     /** Types of alerts */
-    const SUCCESS = 2;
+    const MESSAGE = 2;
     const WARNING = 1;
     const ERROR = 0;
     const NONE = -1;
 
 
     public static function getErrors() {
-        return self::getAlertStore(self::ERROR);
+        return self::getAlertStoreByStatus(self::ERROR);
+    }
+
+
+    public static function getWarnings() {
+        return self::getAlertStoreByStatus(self::WARNING);
+    }
+
+
+    public static function getMessages() {
+        return self::getAlertStoreByStatus(self::MESSAGE);
     }
 
 
     public static $stores = [
         self::ERROR => 'FrError',
         self::WARNING => 'FrWarning',
-        self::SUCCESS => 'FrSuccess',
+        self::MESSAGE => 'FrMessage',
     ];
 
 
-    public static function messages() {
-        return [
-            self::ERROR => Yii::t('messages', 'Your request failed with errors:'),
-            self::WARNING => Yii::t('messages', 'Your request ends with warnings:'),
-            self::SUCCESS => Yii::t('messages', 'Your request ends successfully'),
-            self::NONE => Yii::t('messages', 'Can not determine alert type'),
-        ];
-    }
+
 
 
     public static $general_statuses = [
-        '100' => self::SUCCESS,
+        '100' => self::MESSAGE,
         '010' => self::WARNING,
         '001' => self::ERROR,
         '000' => self::NONE,
     ];
 
-    public static $colors = [
-        self::SUCCESS => 'success',
-        self::WARNING => 'warning',
-        self::ERROR => 'danger',
-        self::NONE => 'info'
-    ];
+
 
 
     /**
@@ -81,7 +100,7 @@ class Alert
             $assertion = true;
         }
         if($assertion) {
-            $buffer = self::getAlertStore($status);
+            $buffer = self::getAlertStoreByStatus($status);
             $buffer[] = ['msg' => $msg,
                          'details' => $details];
             self::setAlert($status, $buffer);
@@ -90,14 +109,14 @@ class Alert
 
 
     public static function popAlert($status) {
-        $buffer = self::getAlertStore($status);
+        $buffer = self::getAlertStoreByStatus($status);
         $last_message = array_slice($buffer, 0, -1);
         return $last_message['msg'];
     }
 
 
     public static function popSuccess() {
-        return self::popAlert(self::SUCCESS);
+        return self::popAlert(self::MESSAGE);
     }
 
 
@@ -118,7 +137,7 @@ class Alert
      */
     public static function addSuccess($msg, $details = null) {
         Yii::info($msg . ' : ' . json_encode($details));
-        self::addAlert(self::SUCCESS, $msg, $details);
+        self::addAlert(self::MESSAGE, $msg, $details);
     }
 
 
@@ -152,7 +171,7 @@ class Alert
      * load buffer array to proper store.
      */
     public static function setAlert($status, $buffer) {
-        Yii::$app->session[self::$stores[$status]] = $buffer;
+        self::$alerts[self::$stores[$status]] = $buffer;
     }
 
 
@@ -161,28 +180,22 @@ class Alert
      * @param $viewInstance
      * @return string
      */
-    public static function printAlert(&$viewInstance) {
-        /**@var \common\components\MainView $viewInstance */
+    public function printAlert(&$viewInstance) {
+        /**@var MainView $viewInstance */
         $result = '';
-        $view = ParamsGetter::is_detailed_alert() ? 'alertView' : 'alertSmallView';
-        if(self::issetAlerts()) {
-            $result = $viewInstance->render('/' . $view, ['general_message' => self::getGeneralMessage(),
-                                                          'general_color' => self::getColor(),
-                                                          'success_store' => self::getAlertStore(self::SUCCESS),
-                                                          'warning_store' => self::getAlertStore(self::WARNING),
-                                                          'error_store' => self::getAlertStore(self::ERROR),
-            ]);
-            self::dropAlerts();
+        $result = [];
+        foreach(self::$stores as $key => $store) {
+            $result[$store] = Yii::$app->session->getFlash($store);
         }
-        return $result;
+        return AlertWidget::widget(['stores'=>$result]);
     }
 
 
     public static function varDumpAlert() {
         if(self::issetAlerts()) {
-            var_dump(self::getAlertStore(self::SUCCESS));
-            var_dump(self::getAlertStore(self::WARNING));
-            var_dump(self::getAlertStore(self::ERROR));
+            var_dump(self::getAlertStoreByStatus(self::MESSAGE));
+            var_dump(self::getAlertStoreByStatus(self::WARNING));
+            var_dump(self::getAlertStoreByStatus(self::ERROR));
             self::dropAlerts();
         }
     }
@@ -193,7 +206,8 @@ class Alert
      * Checks , whether alerts are exist
      */
     public static function issetAlerts() {
-        return self::issetAlert(self::SUCCESS) || self::issetAlert(self::WARNING) || self::issetAlert(self::ERROR);
+        return self::issetAlertStore(self::MESSAGE) || self::issetAlertStore(self::WARNING) ||
+               self::issetAlertStore(self::ERROR);
     }
 
 
@@ -202,7 +216,7 @@ class Alert
      * * Checks , whether errors are exist
      */
     public static function issetErrors() {
-        return self::issetAlert(self::ERROR);
+        return self::issetAlertStore(self::ERROR);
     }
 
 
@@ -211,7 +225,7 @@ class Alert
      * * Checks , whether warnings are exist
      */
     public static function issetWarnings() {
-        self::issetAlert(self::WARNING);
+        return self::issetAlertStore(self::WARNING);
     }
 
 
@@ -220,8 +234,8 @@ class Alert
      * @return bool
      * Checks, whether specified store exists
      */
-    public static function issetAlert($status) {
-        return isset(Yii::$app->session[self::$stores[$status]]);
+    public static function issetAlertStore($status) {
+        return isset($alerts[self::$stores[$status]]);
     }
 
 
@@ -230,9 +244,9 @@ class Alert
      * @return array
      * returns the alert store by specified status
      */
-    public static function getAlertStore($status) {
-        if(self::issetAlert($status)) {
-            return Yii::$app->session[self::$stores[$status]];
+    public static function getAlertStoreByStatus($status) {
+        if(self::issetAlertStore($status)) {
+            return self::$alerts[self::$stores[$status]];
         }
         else {
             return [];
@@ -245,8 +259,8 @@ class Alert
      * deletes all alerts in specified store
      */
     public static function dropAlert($status) {
-        if(self::issetAlert($status)) {
-            unset(Yii::$app->session[self::$stores[$status]]);
+        if(self::issetAlertStore($status)) {
+            unset(self::$alerts[self::$stores[$status]]);
         }
     }
 
@@ -255,7 +269,7 @@ class Alert
      * deletes all alerts
      */
     public static function dropAlerts() {
-        self::dropAlert(self::SUCCESS);
+        self::dropAlert(self::MESSAGE);
         self::dropAlert(self::WARNING);
         self::dropAlert(self::ERROR);
     }
@@ -266,9 +280,9 @@ class Alert
      * returns general status by mix of all statuses
      */
     public static function getGeneralStatus() {
-        $warning = count(self::getAlertStore(self::WARNING));
-        $success = count(self::getAlertStore(self::SUCCESS));
-        $error = count(self::getAlertStore(self::ERROR));
+        $warning = count(self::getAlertStoreByStatus(self::WARNING));
+        $success = count(self::getAlertStoreByStatus(self::MESSAGE));
+        $error = count(self::getAlertStoreByStatus(self::ERROR));
         $succ = (int)($success >= 1 && $warning == 0 && $error == 0);
         $warn = (int)(($success >= 1 && $error >= 1) || $warning >= 1);
         $err = (int)($success == 0 && $warning == 0 && $error >= 1);
@@ -303,6 +317,7 @@ class Alert
                 return $value;
             }
         }
+        return null;
     }
 
 

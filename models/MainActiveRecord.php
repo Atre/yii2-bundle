@@ -55,6 +55,8 @@ class MainActiveRecord extends ActiveRecord
             $values[$lock] = $this->$lock + 1;
             $condition[$lock] = $this->$lock;
         }
+        // We do not check the return value of updateAll() because it's possible
+        // that the UPDATE statement doesn't change anything and thus returns 0.
         $rows = $this->updateAll($values, $condition);
         if($lock !== null && !$rows) {
             throw new StaleObjectException('The object being updated is outdated.');
@@ -64,8 +66,11 @@ class MainActiveRecord extends ActiveRecord
         }
         $changedAttributes = [];
         foreach($values as $name => $value) {
+            
             $changedAttributes[$name] =
-                isset($this->_oldAttributes[$name]) && array_key_exists($name, $this->_oldAttributes)
+                isset($this->_oldAttributes[$name])
+                // it is the additional check for case when an attribute was null
+                && array_key_exists($name, $this->_oldAttributes)
                     ? $this->_oldAttributes[$name] : null;
             $this->_oldAttributes[$name] = $value;
         }
@@ -188,6 +193,7 @@ class MainActiveRecord extends ActiveRecord
         $model = new $class;
         return $model->formName();
     }
+
 
     public function _className() {
         $class = get_called_class();
