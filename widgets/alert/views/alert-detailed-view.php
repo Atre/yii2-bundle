@@ -1,24 +1,26 @@
 <?php
 /**
- * @var $this AlertWidget
+ * @var $this \app\components\MainView
+ * @var $widget \dezmont765\yii2bundle\widgets\alert\AlertWidget
  */
+$widget = $this->context;
 ?>
-<div class="alert alert-<?= $this->general_color ?> in fade">
-    <?= Yii::t('app', $this->general_message) ?>
+<div class="alert alert-<?= $general_color ?> in fade">
+    <?= Yii::t('app', $general_message) ?>
     <a class="details-link">Details</a>
-    <? if(count($this->success_alerts)) : ?>
+    <? if(count($success_alerts)) : ?>
         <pre style="display: none">
-        <? var_dump($this->success_alerts); ?>
+        <? var_dump($success_alerts); ?>
     </pre>
     <? endif ?>
-    <? if(count($this->warning_alerts)) : ?>
+    <? if(count($warning_alerts)) : ?>
         <pre style="display: none">
-        <? var_dump($this->warning_alerts); ?>
+        <? var_dump($warning_alerts); ?>
     </pre>
     <? endif ?>
-    <? if(count($this->error_alerts)) : ?>
+    <? if(count($error_alerts)) : ?>
         <pre style="display: none">
-        <? var_dump($this->error_alerts); ?>
+        <? var_dump($error_alerts); ?>
     </pre>
     <? endif ?>
     <a class="hide-link" style="display:none">Hide...</a>

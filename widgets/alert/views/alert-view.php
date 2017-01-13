@@ -1,19 +1,24 @@
-<?php use app\components\Alert;
+<?php
+use dezmont765\yii2bundle\components\Alert;
 
-/** @var $this AlertWidget */
+/**
+ * @var $this \app\components\MainView
+ * @var $widget \dezmont765\yii2bundle\widgets\alert\AlertWidget
+ */
+$widget = $this->context;
 ?>
-<div class="alert alert-<?= $this->general_color ?> alert-dismissible" style="margin-top: 20px">
+<div class="alert alert-<?= $general_color ?> alert-dismissible" style="margin-top: 20px">
 
     <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span>
     </button>
-    <? if(count($this->success_alerts)) : ?>
-        <?= Alert::recursiveFind($this->success_alerts, 'msg'); ?>
+    <? if(count($success_alerts)) : ?>
+        <?= Alert::recursiveFind($success_alerts, 'msg'); ?>
     <? endif ?>
-    <? if(count($this->warning_alerts)) : ?>
-        <?= Alert::recursiveFind($this->warning_alerts, 'msg'); ?>
+    <? if(count($warning_alerts)) : ?>
+        <?= Alert::recursiveFind($warning_alerts, 'msg'); ?>
     <? endif ?>
-    <? if(count($this->error_alerts)) : ?>
-        <?= Alert::recursiveFind($this->error_alerts, 'msg'); ?>
+    <? if(count($error_alerts)) : ?>
+        <?= Alert::recursiveFind($error_alerts, 'msg'); ?>
     <? endif ?>
 </div>
 <script>

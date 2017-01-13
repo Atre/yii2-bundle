@@ -12,7 +12,6 @@
  */
 namespace dezmont765\yii2bundle\components;
 
-use dezmont765\yii2bundle\views\MainView;
 use dezmont765\yii2bundle\widgets\alert\AlertWidget;
 use Exception;
 use RecursiveArrayIterator;
@@ -22,9 +21,6 @@ use yii\base\ErrorException;
 
 class Alert extends yii\base\Component
 {
-    public $viewType = self::NORMAL_VIEW;
-    const NORMAL_VIEW = 'alertView';
-    const DETAILED_VIEW = 'alertSmallView';
 
 
     public function init() {
@@ -34,9 +30,23 @@ class Alert extends yii\base\Component
     }
 
 
-    public function flashAlerts() {
-        foreach(self::$stores as $key => $store) {
-            Yii::$app->session->setFlash($store, self::getAlertStoreByStatus($key));
+    public static function &getAlertsRef(&$alerts = null) {
+        if($alerts === null) {
+            return self::$alerts;
+        }
+        else return $alerts;
+    }
+
+
+    public function flashAlerts(&$alerts = null) {
+        $alerts = &self::getAlertsRef($alerts);
+        if(count($alerts)) {
+            foreach(self::$stores as $key => $store) {
+                $alert = self::getAlertStoreByStatus($key, $alerts);
+                if(!empty($alert)) {
+                    Yii::$app->session->setFlash($store, $alert);
+                }
+            }
         }
     }
 
@@ -50,18 +60,21 @@ class Alert extends yii\base\Component
     const NONE = -1;
 
 
-    public static function getErrors() {
-        return self::getAlertStoreByStatus(self::ERROR);
+    public static function getErrors(&$alerts = null) {
+        $alerts = &self::getAlertsRef($alerts);
+        return self::getAlertStoreByStatus(self::ERROR, $alerts);
     }
 
 
-    public static function getWarnings() {
-        return self::getAlertStoreByStatus(self::WARNING);
+    public static function getWarnings(&$alerts = null) {
+        $alerts = &self::getAlertsRef($alerts);
+        return self::getAlertStoreByStatus(self::WARNING, $alerts);
     }
 
 
-    public static function getMessages() {
-        return self::getAlertStoreByStatus(self::MESSAGE);
+    public static function getMessages(&$alerts = null) {
+        $alerts = &self::getAlertsRef($alerts);
+        return self::getAlertStoreByStatus(self::MESSAGE, $alerts);
     }
 
 
@@ -72,9 +85,6 @@ class Alert extends yii\base\Component
     ];
 
 
-
-
-
     public static $general_statuses = [
         '100' => self::MESSAGE,
         '010' => self::WARNING,
@@ -83,15 +93,15 @@ class Alert extends yii\base\Component
     ];
 
 
-
-
     /**
      * @param $status
      * @param $msg
      * @param null $details
      * Adds an alert to proper store by status
+     * @param null $alerts
      */
-    public static function addAlert($status, $msg, $details = null) {
+    public static function addAlert($status, $msg, $details = null, &$alerts = null) {
+        $alerts = &self::getAlertsRef($alerts);
         $assertion = true;
         if(Yii::$app->request instanceof yii\web\Request) {
             $assertion = !Yii::$app->request->isAjax;
@@ -100,44 +110,37 @@ class Alert extends yii\base\Component
             $assertion = true;
         }
         if($assertion) {
-            $buffer = self::getAlertStoreByStatus($status);
+            $buffer = self::getAlertStoreByStatus($status, $alerts);
             $buffer[] = ['msg' => $msg,
                          'details' => $details];
-            self::setAlert($status, $buffer);
+            self::setAlert($status, $buffer, $alerts);
         }
     }
 
 
-    public static function popAlert($status) {
-        $buffer = self::getAlertStoreByStatus($status);
+    public static function popAlert($status, &$alerts = null) {
+        $alerts = &self::getAlertsRef($alerts);
+        $buffer = self::getAlertStoreByStatus($status, $alerts);
         $last_message = array_slice($buffer, 0, -1);
         return $last_message['msg'];
     }
 
 
-    public static function popSuccess() {
-        return self::popAlert(self::MESSAGE);
+    public static function popSuccess(&$alerts = null) {
+        $alerts = &self::getAlertsRef($alerts);
+        return self::popAlert(self::MESSAGE, $alerts);
     }
 
 
-    public static function popError() {
-        return self::popAlert(self::ERROR);
+    public static function popError(&$alerts = null) {
+        $alerts = &self::getAlertsRef($alerts);
+        return self::popAlert(self::ERROR, $alerts);
     }
 
 
-    public static function popWarning() {
-        return self::popAlert(self::WARNING);
-    }
-
-
-    /**
-     * @param $msg
-     * @param null $details
-     * Wraps the addAlert with predefined status
-     */
-    public static function addSuccess($msg, $details = null) {
-        Yii::info($msg . ' : ' . json_encode($details));
-        self::addAlert(self::MESSAGE, $msg, $details);
+    public static function popWarning(&$alerts = null) {
+        $alerts = &self::getAlertsRef($alerts);
+        return self::popAlert(self::WARNING, $alerts);
     }
 
 
@@ -145,10 +148,14 @@ class Alert extends yii\base\Component
      * @param $msg
      * @param null $details
      * Wraps the addAlert with predefined status
+     * @param null $alerts
      */
-    public static function addWarning($msg, $details = null) {
-        Yii::warning($msg . ' : ' . json_encode($details));
-        self::addAlert(self::WARNING, $msg, $details);
+    public static function addSuccess($msg, $details = null, &$alerts = null) {
+        $alerts = &self::getAlertsRef($alerts);
+        if(!empty($msg)) {
+            Yii::info($msg . ' : ' . json_encode($details));
+            self::addAlert(self::MESSAGE, $msg, $details, $alerts);
+        }
     }
 
 
@@ -156,11 +163,28 @@ class Alert extends yii\base\Component
      * @param $msg
      * @param null $details
      * Wraps the addAlert with predefined status
+     * @param null $alerts
      */
-    public static function addError($msg, $details = null) {
+    public static function addWarning($msg, $details = null, &$alerts = null) {
+        $alerts = &self::getAlertsRef($alerts);
+        if(!empty($msg)) {
+            Yii::warning($msg . ' : ' . json_encode($details));
+            self::addAlert(self::WARNING, $msg, $details, $alerts);
+        }
+    }
+
+
+    /**
+     * @param $msg
+     * @param null $details
+     * Wraps the addAlert with predefined status
+     * @param null $alerts
+     */
+    public static function addError($msg, $details = null, &$alerts = null) {
+        $alerts = &self::getAlertsRef($alerts);
         if(!empty($msg)) {
             Yii::error($msg . ' : ' . json_encode($details));
-            self::addAlert(self::ERROR, $msg, $details);
+            self::addAlert(self::ERROR, $msg, $details, $alerts);
         }
     }
 
@@ -169,84 +193,102 @@ class Alert extends yii\base\Component
      * @param $status
      * @param $buffer
      * load buffer array to proper store.
+     * @param null $alerts
      */
-    public static function setAlert($status, $buffer) {
-        self::$alerts[self::$stores[$status]] = $buffer;
+    public static function setAlert($status, $buffer, &$alerts = null) {
+        $alerts = &self::getAlertsRef($alerts);
+        $alerts[self::$stores[$status]] = $buffer;
     }
 
 
     /**
      * Prints all collected alerts with proper colors, and then deletes them
-     * @param $viewInstance
      * @return string
      */
-    public function printAlert(&$viewInstance) {
-        /**@var MainView $viewInstance */
-        $result = '';
+    public static function printAlert() {
         $result = [];
         foreach(self::$stores as $key => $store) {
-            $result[$store] = Yii::$app->session->getFlash($store);
+            $alert = self::getAlertStoreByStatus($key) ? self::getAlertStoreByStatus($key) :
+                Yii::$app->session->getFlash($store);
+            if(!empty($alert)) {
+                $result[$store] = $alert;
+            }
         }
-        return AlertWidget::widget(['stores'=>$result]);
+        if(count($result)) {
+            self::dropAlerts();
+            return AlertWidget::widget(['alerts' => $result]);
+        }
+        else return '';
     }
 
 
-    public static function varDumpAlert() {
-        if(self::issetAlerts()) {
+    public static function varDumpAlert(&$alerts = null) {
+        $alerts = &self::getAlertsRef($alerts);
+        if(self::issetAlerts($alerts)) {
             var_dump(self::getAlertStoreByStatus(self::MESSAGE));
             var_dump(self::getAlertStoreByStatus(self::WARNING));
             var_dump(self::getAlertStoreByStatus(self::ERROR));
-            self::dropAlerts();
+            self::dropAlerts($alerts);
         }
     }
 
 
     /**
-     * @return bool
+     * @param null $alerts
+     * @return bool Checks , whether alerts are exist
      * Checks , whether alerts are exist
      */
-    public static function issetAlerts() {
-        return self::issetAlertStore(self::MESSAGE) || self::issetAlertStore(self::WARNING) ||
-               self::issetAlertStore(self::ERROR);
+    public static function issetAlerts(&$alerts = null) {
+        $alerts = &self::getAlertsRef($alerts);
+        return self::issetAlertStore(self::MESSAGE, $alerts) || self::issetAlertStore(self::WARNING, $alerts) ||
+               self::issetAlertStore(self::ERROR, $alerts);
     }
 
 
     /**
-     * @return bool
-     * * Checks , whether errors are exist
+     * @param null $alerts
+     * @return bool * Checks , whether errors are exist
+     * Checks , whether errors are exist
      */
-    public static function issetErrors() {
-        return self::issetAlertStore(self::ERROR);
+    public static function issetErrors(&$alerts = null) {
+        $alerts = &self::getAlertsRef($alerts);
+        return self::issetAlertStore(self::ERROR, $alerts);
     }
 
 
     /**
-     * @return bool
-     * * Checks , whether warnings are exist
+     * @param null $alerts
+     * @return bool * Checks , whether warnings are exist
+     * Checks , whether warnings are exist
      */
-    public static function issetWarnings() {
-        return self::issetAlertStore(self::WARNING);
+    public static function issetWarnings(&$alerts = null) {
+        $alerts = &self::getAlertsRef($alerts);
+        return self::issetAlertStore(self::WARNING, $alerts);
     }
 
 
     /**
      * @param $status
-     * @return bool
+     * @param null $alerts
+     * @return bool Checks, whether specified store exists
      * Checks, whether specified store exists
      */
-    public static function issetAlertStore($status) {
+    public static function issetAlertStore($status, &$alerts = null) {
+        $alerts = &self::getAlertsRef($alerts);
         return isset($alerts[self::$stores[$status]]);
     }
 
 
     /**
      * @param $status
-     * @return array
+     * @param null $alerts
+     * @return array returns the alert store by specified status
      * returns the alert store by specified status
      */
-    public static function getAlertStoreByStatus($status) {
-        if(self::issetAlertStore($status)) {
-            return self::$alerts[self::$stores[$status]];
+    public static function getAlertStoreByStatus($status, &$alerts = null) {
+        $alerts = &self::getAlertsRef($alerts);
+        if(self::issetAlertStore($status, $alerts)) {
+            return $alerts[self::$stores[$status]];
         }
         else {
             return [];
@@ -257,54 +299,42 @@ class Alert extends yii\base\Component
     /**
      * @param $status
      * deletes all alerts in specified store
+     * @param null $alerts
      */
-    public static function dropAlert($status) {
-        if(self::issetAlertStore($status)) {
-            unset(self::$alerts[self::$stores[$status]]);
+    public static function dropAlert($status, &$alerts = null) {
+        $alerts = &self::getAlertsRef($alerts);
+        if(self::issetAlertStore($status, $alerts)) {
+            unset($alerts[self::$stores[$status]]);
         }
     }
 
 
     /**
      * deletes all alerts
+     * @param $alerts
      */
-    public static function dropAlerts() {
-        self::dropAlert(self::MESSAGE);
-        self::dropAlert(self::WARNING);
-        self::dropAlert(self::ERROR);
+    public static function dropAlerts(&$alerts = null) {
+        $alerts = &self::getAlertsRef($alerts);
+        self::dropAlert(self::MESSAGE, $alerts);
+        self::dropAlert(self::WARNING, $alerts);
+        self::dropAlert(self::ERROR, $alerts);
     }
 
 
     /**
-     * @return mixed
+     * @param null $alerts
+     * @return mixed returns general status by mix of all statuses
      * returns general status by mix of all statuses
      */
-    public static function getGeneralStatus() {
-        $warning = count(self::getAlertStoreByStatus(self::WARNING));
-        $success = count(self::getAlertStoreByStatus(self::MESSAGE));
-        $error = count(self::getAlertStoreByStatus(self::ERROR));
+    public static function getGeneralStatus(&$alerts = null) {
+        $alerts = &self::getAlertsRef($alerts);
+        $warning = count(self::getAlertStoreByStatus(self::WARNING, $alerts));
+        $success = count(self::getAlertStoreByStatus(self::MESSAGE, $alerts));
+        $error = count(self::getAlertStoreByStatus(self::ERROR, $alerts));
         $succ = (int)($success >= 1 && $warning == 0 && $error == 0);
         $warn = (int)(($success >= 1 && $error >= 1) || $warning >= 1);
         $err = (int)($success == 0 && $warning == 0 && $error >= 1);
         return self::$general_statuses[$succ . $warn . $err];
-    }
-
-
-    /**
-     * returns color by general status
-     * */
-    public static function getColor() {
-        return self::$colors[self::getGeneralStatus()];
-    }
-
-
-    /**
-     * @return mixed
-     * returns message by general status
-     */
-    public static function getGeneralMessage() {
-        $title_message = self::messages()[self::getGeneralStatus()];
-        return $title_message;
     }
 
 
