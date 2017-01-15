@@ -1,6 +1,7 @@
 <?php
 namespace dezmont765\yii2bundle\actions;
 
+use console\controllers\RbacController;
 use dezmont765\yii2bundle\components\Alert;
 use Exception;
 
@@ -13,13 +14,13 @@ use Exception;
 class DeleteAction extends MainAction
 {
 
-    public $search_model_class = null;
     public $error_message = 'Item has not been deleted';
 
     public function run($id) {
         try {
             $model_class = $this->getModelClass();
             $model = $this->controller->findModel($model_class, $id);
+            $this->controller->checkAccess($this->permission, ['model' => $model]);
             $model->delete();
         }
         catch(Exception $e) {
@@ -27,4 +28,5 @@ class DeleteAction extends MainAction
         }
         return $this->controller->redirect(['list']);
     }
+
 }

@@ -1,7 +1,7 @@
 <?php
 namespace dezmont765\yii2bundle\actions;
 
-use dezmont765\yii2bundle\components\FileSaveBehavior;
+use dezmont765\yii2bundle\behaviors\FileSaveBehavior;
 use dezmont765\yii2bundle\controllers\MainController;
 use dezmont765\yii2bundle\models\MainActiveRecord;
 use Yii;

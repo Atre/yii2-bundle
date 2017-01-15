@@ -13,7 +13,6 @@ use Exception;
 class MassDeleteAction extends MainAction
 {
 
-    public $search_model_class = null;
     public $param = 'keys';
     public $success_message = "Items has been successfully deleted";
     public $error_message = "Item has not been deleted";
@@ -39,4 +38,5 @@ class MassDeleteAction extends MainAction
         }
         return $this->controller->redirect(['list']);
     }
+
 }

@@ -46,7 +46,10 @@ class MainController extends Controller
     }
 
 
-    public static function checkAccess($permission, array $params = []) {
+    public function checkAccess($permission, array $params = []) {
+        if($permission === null) {
+            return true;
+        }
         if(Yii::$app->user->can($permission, $params)) {
             return true;
         }
@@ -90,7 +93,7 @@ class MainController extends Controller
         $model = new $model_class;
         $models = $model->searchByAttribute($attribute, $value, $additional_criteria);
         $model_array = [];
-        foreach ($models as $model) {
+        foreach($models as $model) {
             $model_array[] = ['id' => $model->id,
                               'text' => is_null($return_wrap) ? $model->$attribute : $return_wrap($model)];
         }
@@ -113,7 +116,7 @@ class MainController extends Controller
                             'text' => is_null($return_wrap) ? $model->$attribute : $return_wrap($model)];
         }
         else {
-            foreach ($models as $model) {
+            foreach($models as $model) {
                 $model_array[] = ['id' => $model->id,
                                   'text' => is_null($return_wrap) ? $model->$attribute : $return_wrap($model)];
             }
@@ -135,7 +138,7 @@ class MainController extends Controller
             $model_array = ['id' => $model->$attribute, 'text' => $model->$show_attribute];
         }
         else {
-            foreach ($models as $model) {
+            foreach($models as $model) {
                 $model_array[] = ['id' => $model->$attribute, 'text' => $model->$show_attribute];
             }
         }
@@ -164,7 +167,7 @@ class MainController extends Controller
     public function ajaxValidationMultiple($models) {
         $result = null;
         if(Yii::$app->request->isAjax) {
-            foreach ($models as $model) {
+            foreach($models as $model) {
                 $model->load(Yii::$app->request->post());
             }
             Yii::$app->response->format = Response::FORMAT_JSON;
