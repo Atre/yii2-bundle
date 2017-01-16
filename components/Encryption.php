@@ -1,4 +1,4 @@
-<?php namespace dezmont765\components;
+<?php namespace dezmont765\yii2bundle\components;
 
 use Yii;
 use yii\base\Exception;
@@ -7,28 +7,26 @@ class Encryption
 {
     const skey = "cumbaja2013"; // you can change it
 
-    public static function safe_b64encode($string)
-    {
 
+    public static function safe_b64encode($string) {
         $data = base64_encode($string);
-        $data = str_replace(array('+', '/', '='), array('-', '_', ''), $data);
+        $data = str_replace(['+', '/', '='], ['-', '_', ''], $data);
         return $data;
     }
 
-    public static function safe_b64decode($string)
-    {
-        $data = str_replace(array('-', '_'), array('+', '/'), $string);
+
+    public static function safe_b64decode($string) {
+        $data = str_replace(['-', '_'], ['+', '/'], $string);
         $mod4 = strlen($data) % 4;
-        if ($mod4) {
+        if($mod4) {
             $data .= substr('====', $mod4);
         }
         return base64_decode($data);
     }
 
-    public static function encode($value)
-    {
 
-        if (!$value) {
+    public static function encode($value) {
+        if(!$value) {
             return false;
         }
         $text = $value;
@@ -38,10 +36,9 @@ class Encryption
         return trim(self::safe_b64encode($crypttext));
     }
 
-    public static function decode($value)
-    {
 
-        if (!$value) {
+    public static function decode($value) {
+        if(!$value) {
             return false;
         }
         $crypttext = self::safe_b64decode($value);
@@ -51,8 +48,8 @@ class Encryption
         return trim($decrypttext);
     }
 
-    private static function encryptInit()
-    {
+
+    private static function encryptInit() {
         $key = Yii::$app->params[Params::data_encryption_key()];
         $td = mcrypt_module_open('des', '', 'ecb', '');
         $key = substr($key, 0, mcrypt_enc_get_key_size($td));
@@ -61,29 +58,25 @@ class Encryption
         return ['td' => $td, 'key' => $key, 'iv' => $iv];
     }
 
-    public static function secureEncode($data)
-    {
+
+    public static function secureEncode($data) {
         $encrypt = self::encryptInit();
         $encoded = null;
-        if (mcrypt_generic_init($encrypt['td'], $encrypt['key'], $encrypt['iv']) != -1) {
+        if(mcrypt_generic_init($encrypt['td'], $encrypt['key'], $encrypt['iv']) != -1) {
             /* Encrypt data */
             $encoded = mcrypt_generic($encrypt['td'], trim($data));
-
             mcrypt_generic_deinit($encrypt['td']);
             mcrypt_module_close($encrypt['td']);
-
         }
         return $encoded;
     }
 
-    public static function secureDecode($data)
-    {
 
+    public static function secureDecode($data) {
         $encrypt = self::encryptInit();
         $decoded = null;
         /* Initialize encryption handle */
-        if (mcrypt_generic_init($encrypt['td'], $encrypt['key'], $encrypt['iv']) != -1) {
-
+        if(mcrypt_generic_init($encrypt['td'], $encrypt['key'], $encrypt['iv']) != -1) {
             $decoded = trim(mdecrypt_generic($encrypt['td'], $data));
             mcrypt_generic_deinit($encrypt['td']);
             mcrypt_module_close($encrypt['td']);
@@ -91,15 +84,16 @@ class Encryption
         return $decoded;
     }
 
-    public static function secureDecodeTest($data)
-    {
+
+    public static function secureDecodeTest($data) {
         echo $data;
         $encoded = self::secureEncode($data);
         echo $encoded;
         $decoded = self::secureDecode($encoded);
         echo $decoded;
-        if (strncmp($decoded, $data, strlen($data)) == 0)
+        if(strncmp($decoded, $data, strlen($data)) == 0) {
             echo ' OK!';
+        }
         else echo ' FAILED!';
         return $encoded;
     }
@@ -111,10 +105,10 @@ class Encryption
      * @param string $string the string being measured for length
      * @return integer the number of bytes in the given string.
      */
-    public static function byteLength($string)
-    {
+    public static function byteLength($string) {
         return mb_strlen($string, '8bit');
     }
+
 
     /**
      * Returns the portion of string specified by the start and length parameters.
@@ -126,14 +120,12 @@ class Encryption
      * @return string the extracted part of string, or FALSE on failure or an empty string.
      * @see http://www.php.net/manual/en/function.substr.php
      */
-    public static function byteSubstr($string, $start, $length = null)
-    {
+    public static function byteSubstr($string, $start, $length = null) {
         return mb_substr($string, $start, $length === null ? mb_strlen($string, '8bit') : $length, '8bit');
     }
 
 
-    public static function generateRandomKey($length = 32)
-    {
+    public static function generateRandomKey($length = 32) {
         /*
          * Strategy
          *
@@ -153,49 +145,41 @@ class Encryption
          *
          * For background, see http://sockpuppet.org/blog/2014/02/25/safely-generate-random-numbers/
          */
-
         $bytes = '';
-
         // If we are on Linux or any OS that mimics the Linux /dev/urandom device, e.g. FreeBSD or OS X,
         // then read from /dev/urandom.
-        if (@file_exists('/dev/urandom')) {
+        if(@file_exists('/dev/urandom')) {
             $handle = fopen('/dev/urandom', 'r');
-            if ($handle !== false) {
+            if($handle !== false) {
                 $bytes .= fread($handle, $length);
                 fclose($handle);
             }
         }
-
-        if (self::byteLength($bytes) >= $length) {
+        if(self::byteLength($bytes) >= $length) {
             return self::byteSubstr($bytes, 0, $length);
         }
-
         // If we are not on Linux and there is a /dev/random device then we have a BSD or Unix device
         // that won't block. It's not safe to read from /dev/random on Linux.
-        if (PHP_OS !== 'Linux' && @file_exists('/dev/random')) {
+        if(PHP_OS !== 'Linux' && @file_exists('/dev/random')) {
             $handle = fopen('/dev/random', 'r');
-            if ($handle !== false) {
+            if($handle !== false) {
                 $bytes .= fread($handle, $length);
                 fclose($handle);
             }
         }
-
-        if (self::byteLength($bytes) >= $length) {
+        if(self::byteLength($bytes) >= $length) {
             return self::byteSubstr($bytes, 0, $length);
         }
-
-        if (!extension_loaded('openssl')) {
+        if(!extension_loaded('openssl')) {
             throw new Exception('The OpenSSL PHP extension is not installed.');
         }
-
         $bytes .= openssl_random_pseudo_bytes($length, $cryptoStrong);
-
-        if (self::byteLength($bytes) < $length || !$cryptoStrong) {
+        if(self::byteLength($bytes) < $length || !$cryptoStrong) {
             throw new Exception('Unable to generate random bytes.');
         }
-
         return self::byteSubstr($bytes, 0, $length);
     }
+
 
     /**
      * Generates a random string of specified length.
@@ -205,8 +189,7 @@ class Encryption
      * @return string the generated random key
      * @throws Exception on failure.
      */
-    public static function generateRandomString($length = 32)
-    {
+    public static function generateRandomString($length = 32) {
         $bytes = self::generateRandomKey($length);
         // '=' character(s) returned by base64_encode() are always discarded because
         // they are guaranteed to be after position $length in the base64_encode() output.

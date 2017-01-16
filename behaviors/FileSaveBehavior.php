@@ -1,11 +1,12 @@
 <?php
 namespace dezmont765\yii2bundle\behaviors;
 
-use dezmont765\components\Encryption;
+use dezmont765\yii2bundle\components\Encryption;
 use dezmont765\yii2bundle\models\MainActiveRecord;
 use Yii;
 use yii\base\Behavior;
 use yii\base\InvalidParamException;
+use yii\db\ActiveQuery;
 use yii\db\ActiveRecord;
 use yii\helpers\FileHelper;
 use yii\helpers\Url;
@@ -39,6 +40,7 @@ class FileSaveBehavior extends Behavior
     const IS_MULTIPLE = 'is_multiple';
     const IS_ENCRYPT = 'is_encrypt';
     const ON_DELETE = 'on_delete';
+    const IS_OLD_FILES_ARE_KEPT = 'is_need_to_delete_old_files';
     public $file_attributes;
 
 
@@ -53,7 +55,7 @@ class FileSaveBehavior extends Behavior
      * @param bool $is_encrypt
      * @param callable $on_delete
      */
-    public function addFileAttribute($attribute, $file_save_dir, $file_view_dir, $backend_view_dir, $frontend_view_dir, $file_view_url, callable $on_save = null, $is_encrypt = false,callable $on_delete = null) {
+    public function addFileAttribute($attribute, $file_save_dir, $file_view_dir, $backend_view_dir, $frontend_view_dir, $file_view_url, callable $on_save = null, $is_encrypt = false, callable $on_delete = null) {
         $this->file_attributes[$attribute][self::FILE_SAVE_DIR] = $file_save_dir;
         $this->file_attributes[$attribute][self::FILE_VIEW_DIR] = $file_view_dir;
         $this->file_attributes[$attribute][self::FILE_VIEW_URL] = $file_view_url;
@@ -95,7 +97,6 @@ class FileSaveBehavior extends Behavior
 
     public function events() {
         return [
-            ActiveRecord::EVENT_BEFORE_VALIDATE => 'beforeValidate',
             ActiveRecord::EVENT_AFTER_VALIDATE => 'afterValidate',
             ActiveRecord::EVENT_AFTER_INSERT => 'afterSave',
             ActiveRecord::EVENT_AFTER_UPDATE => 'afterSave',
@@ -103,6 +104,7 @@ class FileSaveBehavior extends Behavior
             ActiveRecord::EVENT_AFTER_DELETE => 'afterDelete'
         ];
     }
+
 
     public function afterFind() {
         foreach($this->file_attributes as $file_attribute => $property) {
@@ -138,10 +140,11 @@ class FileSaveBehavior extends Behavior
         }
     }
 
+
     public function deleteSimilarFiles($file) {
-        $name = pathinfo($file,PATHINFO_FILENAME);
-        $path = pathinfo($file,PATHINFO_DIRNAME);
-        $files = glob($path.DIRECTORY_SEPARATOR . $name . '*');
+        $name = pathinfo($file, PATHINFO_FILENAME);
+        $path = pathinfo($file, PATHINFO_DIRNAME);
+        $files = glob($path . DIRECTORY_SEPARATOR . $name . '*');
         foreach($files as $file) {
             $this->removeFile($file);
             if(is_dir($file)) {
@@ -150,23 +153,21 @@ class FileSaveBehavior extends Behavior
         }
     }
 
-    public function beforeValidationProcess($attribute) {
-        if($this->isMultiple($attribute)) {
-            $this->owner->$attribute = UploadedFile::getInstances($this->owner, $attribute);
-        }
-        else {
-            $this->owner->$attribute = UploadedFile::getInstance($this->owner, $attribute);
-        }
-    }
-
-
-    public function beforeValidate($event) {
-        foreach($this->file_attributes as $file_attribute => $property) {
-            self::beforeValidationProcess($file_attribute);
-        }
-    }
-
-
+//    public function beforeValidationProcess($attribute) {
+//        if($this->isMultiple($attribute)) {
+//            $this->owner->$attribute = UploadedFile::getInstances($this->owner, $attribute);
+//        }
+//        else {
+//            $this->owner->$attribute = UploadedFile::getInstance($this->owner, $attribute);
+//        }
+//    }
+//
+//
+//    public function beforeValidate($event) {
+//        foreach($this->file_attributes as $file_attribute => $property) {
+//            self::beforeValidationProcess($file_attribute);
+//        }
+//    }
     public function removeFile($file_path) {
         if(is_file($file_path)) {
             unlink($file_path);
@@ -178,38 +179,26 @@ class FileSaveBehavior extends Behavior
 
     public function afterValidationProcessMultiple($attribute) {
         $this->file_attributes[$attribute][self::INSTANCE] = UploadedFile::getInstances($this->owner, $attribute);
-        $instances = $this->file_attributes[$attribute][self::INSTANCE];
-        if(count($instances) > 0) {
-            if(!$this->owner->isNewRecord) {
-                /** @var string|MainActiveRecord $store_model_class */
-                $store_model_attribute = $this->file_attributes[$attribute][self::STORE_MODEL_ATTRIBUTE];
-                $files = $this->findRelatedModel($attribute);
-                foreach($files as $file) {
-                    if($file->delete()) {
-                        if(!empty($store_model_attribute)) {
-                            $this->removeFile($this->getFileSavePath($attribute). $file->$store_model_attribute);
-                            $this->deleteSimilarFiles($this->getFileSavePath($attribute). $file->$store_model_attribute);
+        $is_old_files_are_kept = $this->file_attributes[$attribute][self::IS_OLD_FILES_ARE_KEPT];
+        if(!$is_old_files_are_kept) {
+            $instances = $this->file_attributes[$attribute][self::INSTANCE];
+            if(count($instances) > 0) {
+                if(!$this->owner->isNewRecord) {
+                    /** @var string|MainActiveRecord $store_model_class */
+                    $store_model_attribute = $this->file_attributes[$attribute][self::STORE_MODEL_ATTRIBUTE];
+                    $files = $this->findRelatedModel($attribute);
+                    foreach($files as $file) {
+                        if($file->delete()) {
+                            if(!empty($store_model_attribute)) {
+                                $this->removeFile($this->getFileSavePath($attribute) . $file->$store_model_attribute);
+                                $this->deleteSimilarFiles($this->getFileSavePath($attribute) .
+                                                          $file->$store_model_attribute);
+                            }
                         }
                     }
                 }
             }
         }
-    }
-
-
-    public function findRelatedModel($attribute) {
-        if($this->isMultiple($attribute)) {
-            $store_model_class = $this->file_attributes[$attribute][self::STORE_MODEL_CLASS];
-            $store_relation_attribute = $this->file_attributes[$attribute][self::STORE_RELATION_ATTRIBUTE];
-            $store_type_attribute = $this->file_attributes[$attribute][self::STORE_TYPE_ATTRIBUTE];
-            $store_model_type = $this->file_attributes[$attribute][self::STORE_MODEL_TYPE];
-            $files = $store_model_class::find()
-                                       ->where([$store_relation_attribute => $this->owner->id])
-                                       ->andWhere([$store_type_attribute => $store_model_type])
-                                       ->all();
-            return $files;
-        }
-        return [];
     }
 
 
@@ -229,6 +218,32 @@ class FileSaveBehavior extends Behavior
                 $this->owner->$attribute = $this->owner->oldAttributes[$attribute];
             }
         }
+    }
+
+
+    public function findRelatedModel($attribute) {
+        if($this->isMultiple($attribute)) {
+            $files = $this->getRelatedModelsQuery($attribute)->all();
+            return $files;
+        }
+        return [];
+    }
+
+
+    /**
+     * @param $attribute
+     * @return ActiveQuery
+     */
+    public function getRelatedModelsQuery($attribute) {
+        /** @var MainActiveRecord $store_model_class */
+        $store_model_class = $this->file_attributes[$attribute][self::STORE_MODEL_CLASS];
+        $store_relation_attribute = $this->file_attributes[$attribute][self::STORE_RELATION_ATTRIBUTE];
+        $store_type_attribute = $this->file_attributes[$attribute][self::STORE_TYPE_ATTRIBUTE];
+        $store_model_type = $this->file_attributes[$attribute][self::STORE_MODEL_TYPE];
+        $query = $store_model_class::find()
+                                   ->where([$store_relation_attribute => $this->owner->id])
+                                   ->andWhere([$store_type_attribute => $store_model_type]);
+        return $query;
     }
 
 
@@ -287,10 +302,11 @@ class FileSaveBehavior extends Behavior
                 if(is_dir($frontend_view_dir)) {
                     FileHelper::removeDirectory($frontend_view_dir);
                 }
-                symlink($file_save_path, $frontend_view_dir);
+                symlink($file_save_dir, $frontend_view_dir);
             }
         }
     }
+
 
     public static function _is_link($target) {
         if(is_link($target)) {
@@ -318,6 +334,13 @@ class FileSaveBehavior extends Behavior
                 $store_model_type = $this->file_attributes[$attribute][self::STORE_MODEL_TYPE];
                 $store_model_attribute = $this->file_attributes[$attribute][self::STORE_MODEL_ATTRIBUTE];
                 $store_relation_attribute = $this->file_attributes[$attribute][self::STORE_RELATION_ATTRIBUTE];
+                $is_old_files_are_kept = $this->file_attributes[$attribute][self::IS_OLD_FILES_ARE_KEPT];
+                if($is_old_files_are_kept) {
+                    if(!is_array($this->owner->$attribute)) {
+                        $this->owner->$attribute = [];
+                    }
+                }
+                else $this->owner->$attribute = [];
                 foreach($instances as $instance) {
                     if($instance instanceof UploadedFile) {
                         /** @var MainActiveRecord $store_model */
@@ -328,6 +351,7 @@ class FileSaveBehavior extends Behavior
                         $store_model->$store_type_attribute = $store_model_type;
                         $store_model->$store_relation_attribute = $this->owner->id;
                         if($store_model->save()) {
+                            $this->owner->$attribute[$store_model->id] = $store_model->$store_model_attribute;
                             $file_full_path = $this->getFileSavePath($attribute) . $store_model->$store_model_attribute;
                             if($instance->saveAs($file_full_path)) {
                                 if(isset(self::getFileAttributeParams($attribute)[self::ON_SAVE])
@@ -335,7 +359,8 @@ class FileSaveBehavior extends Behavior
                                 ) {
                                     call_user_func_array(
                                         self::getFileAttributeParams($attribute)[self::ON_SAVE],
-                                        [$attribute,$file_full_path, $this->getFileSavePath($attribute),$file_name,$file_extension]);
+                                        [$attribute, $file_full_path, $this->getFileSavePath($attribute), $file_name,
+                                         $file_extension]);
                                 }
                             }
                         }
@@ -362,7 +387,8 @@ class FileSaveBehavior extends Behavior
                     ) {
                         call_user_func_array(
                             self::getFileAttributeParams($attribute)[self::ON_SAVE],
-                            [$attribute, $this->getFileSavePath($attribute) . $this->owner->$attribute,$this->owner->$attribute]);
+                            [$attribute, $this->getFileSavePath($attribute) . $this->owner->$attribute,
+                             $this->owner->$attribute]);
                     }
                 }
             }
@@ -371,7 +397,6 @@ class FileSaveBehavior extends Behavior
 
 
     public function postSavingProcess($attribute) {
-
         if($this->isMultiple($attribute)) {
             $this->postSavingProcessMultiple($attribute);
         }
@@ -478,36 +503,53 @@ class FileSaveBehavior extends Behavior
     /** @method getFileViewPath
      * @param $file_attribute
      * @param bool $scheme
+     * @param bool $append_timestamp
      * @return string
      */
-    public function getFile($file_attribute, $scheme = false) {
+    public function getFile($file_attribute, $scheme = false, $append_timestamp = false) {
         $result = null;
         if($this->isMultiple($file_attribute)) {
             $result = [];
             if(is_array($this->owner->$file_attribute) && count($this->owner->$file_attribute)) {
                 $files = $this->owner->$file_attribute;
                 foreach($files as $file) {
-                    $result[] = $this->getFileByName($files,$file_attribute,$scheme);
+                    $result[] = $this->getFileByName($files, $file_attribute, $scheme, $append_timestamp);
                 }
             }
             else {
                 $files = $this->findRelatedModel($file_attribute);
                 $store_model_attribute = $this->file_attributes[$file_attribute][self::STORE_MODEL_ATTRIBUTE];
                 foreach($files as $file) {
-                    $result[] = $this->getFileByName($file->$store_model_attribute,$file_attribute,$scheme);
+                    $result[] = $this->getFileByName($file->$store_model_attribute, $file_attribute, $scheme,
+                                                     $append_timestamp);
                 }
             }
-
-            
         }
         else {
-            $result = $this->getFileByName($this->owner->$file_attribute,$file_attribute,$scheme);
+            $result = $this->getFileByName($this->owner->$file_attribute, $file_attribute, $scheme, $append_timestamp);
         }
         return $result;
     }
 
+
+    public function getFileByRelationId($id, $file_attribute, $scheme = false, $append_timestamp = false) {
+        $store_model_attribute = $this->file_attributes[$file_attribute][self::STORE_MODEL_ATTRIBUTE];
+        $model = $this->getRelatedModelsQuery($file_attribute)->andWhere(['id' => $id])->one();
+        $file = $this->getFileByName($model->$store_model_attribute, $file_attribute, $scheme, $append_timestamp);
+        return $file;
+    }
+
+
     public function getFilePhysicalPath($file_attribute) {
         return $this->getFileSavePath($file_attribute) . $this->owner->$file_attribute;
+    }
+
+
+    public function getFilePhysicalPathByRelationId($file_attribute, $id) {
+        $store_model_attribute = $this->file_attributes[$file_attribute][self::STORE_MODEL_ATTRIBUTE];
+        $model = $this->getRelatedModelsQuery($file_attribute)->andWhere(['id' => $id])->one();
+        $file = $this->getFileSavePath($file_attribute) . $model->$store_model_attribute;
+        return $file;
     }
 
 
@@ -519,9 +561,28 @@ class FileSaveBehavior extends Behavior
         }
         else return false;
     }
-    
-    public function getFileByName($name,$attribute,$scheme = false) {
-        $file = self::getFileViewPath($attribute) . $name;
+
+
+    public function deleteFileByRelationId($file_attribute, $id) {
+        $store_model_attribute = $this->file_attributes[$file_attribute][self::STORE_MODEL_ATTRIBUTE];
+        $model = $this->getRelatedModelsQuery($file_attribute)->andWhere(['id' => $id])->one();
+        $file = $this->getFileSavePath($file_attribute) . $model->$store_model_attribute;
+        if($model->delete()) {
+            $this->removeFile($file);
+            return true;
+        }
+        else return false;
+    }
+
+
+    public function getFileByName($name, $attribute, $scheme = false, $append_timestamp = false) {
+        $file_path = self::getFileSavePath($attribute) . $name;
+        if($append_timestamp && ($timestamp = @filemtime($file_path)) > 0) {
+            $file = self::getFileViewPath($attribute) . $name . '?timestamp=' . $timestamp;
+        }
+        else {
+            $file = self::getFileViewPath($attribute) . $name;
+        }
         if($scheme) {
             return Url::to([$file], $scheme);
         }
