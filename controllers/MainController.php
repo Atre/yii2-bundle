@@ -1,7 +1,7 @@
 <?php
 namespace dezmont765\yii2bundle\controllers;
 
-use common\filters\PageSaver;
+use dezmont765\yii2bundle\filters\PageSaver;
 use dezmont765\yii2bundle\models\MainActiveRecord;
 use Yii;
 use yii\bootstrap\ActiveForm;

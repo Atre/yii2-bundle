@@ -2,12 +2,13 @@
 namespace dezmont765\yii2bundle\behaviors;
 
 use dezmont765\yii2bundle\components\Encryption;
+use dezmont765\yii2bundle\events\FileSaveEvent;
 use dezmont765\yii2bundle\models\MainActiveRecord;
 use Yii;
 use yii\base\Behavior;
 use yii\base\InvalidParamException;
-use yii\db\ActiveQuery;
 use yii\db\ActiveRecord;
+use yii\helpers\ArrayHelper;
 use yii\helpers\FileHelper;
 use yii\helpers\Url;
 use yii\web\UploadedFile;
@@ -25,73 +26,97 @@ class FileSaveBehavior extends Behavior
 {
     public $crop;
 
+    const EVENT_FILE_SAVE = 'file_save';
+    const EVENT_FILE_DELETE = 'file_delete';
+
     const INSTANCE = 'instance';
-    const FILE_SAVE_DIR = 'file_save_dir';
-    const FILE_VIEW_DIR = 'file_view_dir';
-    const STORE_MODEL_CLASS = 'store_model_class';
-    const STORE_RELATION_ATTRIBUTE = 'store_relation_attribute';
-    const STORE_TYPE_ATTRIBUTE = 'store_type_attribute';
-    const STORE_MODEL_ATTRIBUTE = 'store_model_attribute';
-    const STORE_MODEL_TYPE = 'store_model_type';
-    const FILE_VIEW_URL = 'file_view_url';
-    const BACKEND_VIEW_DIR = 'backend_view_dir';
-    const FRONTEND_VIEW_DIR = 'frontend_view_dir';
-    const ON_SAVE = 'on_save';
-    const IS_MULTIPLE = 'is_multiple';
-    const IS_ENCRYPT = 'is_encrypt';
-    const ON_DELETE = 'on_delete';
-    const IS_OLD_FILES_ARE_KEPT = 'is_need_to_delete_old_files';
-    public $file_attributes;
-
-
-    /** @method addFileAttribute
-     * @param $attribute
-     * @param $file_save_dir
-     * @param $file_view_dir
-     * @param $backend_view_dir
-     * @param $frontend_view_dir
-     * @param $file_view_url
-     * @param callable $on_save
-     * @param bool $is_encrypt
-     * @param callable $on_delete
+    /**
+     * Full real path to a real file folder, usually stored in common
      */
-    public function addFileAttribute($attribute, $file_save_dir, $file_view_dir, $backend_view_dir, $frontend_view_dir, $file_view_url, callable $on_save = null, $is_encrypt = false, callable $on_delete = null) {
-        $this->file_attributes[$attribute][self::FILE_SAVE_DIR] = $file_save_dir;
-        $this->file_attributes[$attribute][self::FILE_VIEW_DIR] = $file_view_dir;
-        $this->file_attributes[$attribute][self::FILE_VIEW_URL] = $file_view_url;
-        $this->file_attributes[$attribute][self::BACKEND_VIEW_DIR] = $backend_view_dir;
-        $this->file_attributes[$attribute][self::FRONTEND_VIEW_DIR] = $frontend_view_dir;
-        $this->file_attributes[$attribute][self::ON_SAVE] = $on_save;
-        $this->file_attributes[$attribute][self::ON_DELETE] = $on_delete;
-        $this->file_attributes[$attribute][self::IS_ENCRYPT] = $is_encrypt;
+    const FILE_BASE_SAVE_DIR = 'file_save_dir';
+    /**
+     * Public relative path to a file folder
+     */
+    const FILE_VIEW_BASE_URL = 'file_view_url';
+    /**
+     * Path to a backend folder, which is actually a symlink to a folder, stored in common
+     */
+    const BACKEND_VIEW_DIR = 'backend_view_dir';
+    /**
+     * Path to a frontend folder, which is actually a symlink to a folder, stored in common
+     */
+    const FRONTEND_VIEW_DIR = 'frontend_view_dir';
+    /**
+     * Callback, called on save
+     */
+    const ON_SAVE = 'on_save';
+    /**
+     * Callback, called on delete
+     */
+    const ON_DELETE = 'on_delete';
+    /**
+     * Whether to use encrypt folder name or not, 'false' by default
+     */
+    const IS_ENCRYPT = 'is_encrypt';
+    /**
+     * Which attribute is used to build a folder name, 'id' by default.
+     */
+    const FILE_FOLDER_ATTRIBUTE = 'file_folder_attribute';
+    /**
+     * Primary key property name
+     */
+    const PK_ATTRIBUTE = 'pk_attribute';
+
+    public $file_attributes = [];
+
+
+    public function requiredParams() {
+        return [
+            self::FILE_BASE_SAVE_DIR,
+            self::FILE_VIEW_BASE_URL,
+            self::BACKEND_VIEW_DIR,
+            self::FRONTEND_VIEW_DIR,
+            self::FILE_FOLDER_ATTRIBUTE,
+        ];
     }
 
 
-    public function addFilesAttribute($attribute, $store_model_class, $store_model_attribute, $store_model_type, $store_relation_attribute, $store_type_attribute,
-                                      $file_save_dir, $file_view_dir, $backend_view_dir,
-                                      $frontend_view_dir, $file_view_url, callable $on_save = null, $is_encrypt = false) {
-        $this->file_attributes[$attribute][self::STORE_MODEL_CLASS] = $store_model_class;
-        $this->file_attributes[$attribute][self::STORE_MODEL_ATTRIBUTE] = $store_model_attribute;
-        $this->file_attributes[$attribute][self::STORE_RELATION_ATTRIBUTE] = $store_relation_attribute;
-        $this->file_attributes[$attribute][self::STORE_MODEL_TYPE] = $store_model_type;
-        $this->file_attributes[$attribute][self::STORE_TYPE_ATTRIBUTE] = $store_type_attribute;
-        $this->file_attributes[$attribute][self::FILE_SAVE_DIR] = $file_save_dir;
-        $this->file_attributes[$attribute][self::FILE_VIEW_DIR] = $file_view_dir;
-        $this->file_attributes[$attribute][self::FILE_VIEW_URL] = $file_view_url;
-        $this->file_attributes[$attribute][self::BACKEND_VIEW_DIR] = $backend_view_dir;
-        $this->file_attributes[$attribute][self::FRONTEND_VIEW_DIR] = $frontend_view_dir;
-        $this->file_attributes[$attribute][self::ON_SAVE] = $on_save;
-        $this->file_attributes[$attribute][self::IS_MULTIPLE] = true;
-        $this->file_attributes[$attribute][self::IS_ENCRYPT] = $is_encrypt;
+    public function initialValues() {
+        return [
+            self::INSTANCE => null,
+            self::ON_SAVE => null,
+            self::ON_DELETE => null,
+            self::IS_ENCRYPT => false,
+            self::PK_ATTRIBUTE => 'id',
+            self::FILE_FOLDER_ATTRIBUTE => 'id'
+        ];
     }
 
 
-    public function isMultiple($file_attribute) {
-        $is_multiple = null;
-        if(isset($this->file_attributes[$file_attribute][self::IS_MULTIPLE])) {
-            $is_multiple = $this->file_attributes[$file_attribute][self::IS_MULTIPLE];
+    public function init() {
+        foreach($this->file_attributes as $key => &$params) {
+            $params = ArrayHelper::merge($this->initialValues(), $params);
+            $required_params = array_flip($this->requiredParams());
+            foreach($required_params as $param_name => $required_param) {
+                if(empty($params[$param_name])) {
+                    throw new InvalidParamException($param_name . ' can not be empty');
+                }
+            }
+//
         }
-        return $is_multiple;
+    }
+
+
+    public function attach($owner) {
+        parent::attach($owner);
+        foreach($this->file_attributes as $key => $params) {
+            if(!empty($params[self::ON_SAVE])) {
+                $this->owner->on(static::EVENT_FILE_SAVE, $params[self::ON_SAVE]);
+            }
+            if(!empty($params[self::ON_DELETE])) {
+                $this->owner->on(static::EVENT_FILE_SAVE, $params[self::ON_DELETE]);
+            }
+        }
     }
 
 
@@ -100,37 +125,13 @@ class FileSaveBehavior extends Behavior
             ActiveRecord::EVENT_AFTER_VALIDATE => 'afterValidate',
             ActiveRecord::EVENT_AFTER_INSERT => 'afterSave',
             ActiveRecord::EVENT_AFTER_UPDATE => 'afterSave',
-            ActiveRecord::EVENT_AFTER_FIND => 'afterFind',
             ActiveRecord::EVENT_AFTER_DELETE => 'afterDelete'
         ];
     }
 
 
-    public function afterFind() {
-        foreach($this->file_attributes as $file_attribute => $property) {
-            if($this->isMultiple($file_attribute)) {
-                $files = $this->findRelatedModel($file_attribute);
-                $store_model_attribute = $this->file_attributes[$file_attribute][self::STORE_MODEL_ATTRIBUTE];
-                if(count($files)) {
-                    $this->owner->$file_attribute = [];
-                    foreach($files as $file) {
-                        $this->owner->{$file_attribute}[$file->id] = $file->$store_model_attribute;
-                    }
-                }
-            }
-        }
-    }
-
-
     public function afterDeleteProcess($attribute) {
-        FileHelper::removeDirectory($this->getFileSavePath($attribute));
-    }
-
-
-    protected function deleteOldFile($file_path) {
-        if(is_file($file_path)) {
-            unlink($file_path);
-        }
+        FileHelper::removeDirectory($this->getFileSaveDir($attribute));
     }
 
 
@@ -141,34 +142,29 @@ class FileSaveBehavior extends Behavior
     }
 
 
+    /**
+     * Deletes all files and folders with name starting from $name
+     * @param $file
+     */
     public function deleteSimilarFiles($file) {
         $name = pathinfo($file, PATHINFO_FILENAME);
         $path = pathinfo($file, PATHINFO_DIRNAME);
         $files = glob($path . DIRECTORY_SEPARATOR . $name . '*');
         foreach($files as $file) {
-            $this->removeFile($file);
+            $this->_unlink($file);
             if(is_dir($file)) {
                 FileHelper::removeDirectory($file);
             }
         }
     }
 
-//    public function beforeValidationProcess($attribute) {
-//        if($this->isMultiple($attribute)) {
-//            $this->owner->$attribute = UploadedFile::getInstances($this->owner, $attribute);
-//        }
-//        else {
-//            $this->owner->$attribute = UploadedFile::getInstance($this->owner, $attribute);
-//        }
-//    }
-//
-//
-//    public function beforeValidate($event) {
-//        foreach($this->file_attributes as $file_attribute => $property) {
-//            self::beforeValidationProcess($file_attribute);
-//        }
-//    }
-    public function removeFile($file_path) {
+
+    /**
+     * Safe file unlink
+     * @param $file_path
+     * @return bool
+     */
+    public function _unlink($file_path) {
         if(is_file($file_path)) {
             unlink($file_path);
             return true;
@@ -177,41 +173,35 @@ class FileSaveBehavior extends Behavior
     }
 
 
-    public function afterValidationProcessMultiple($attribute) {
-        $this->file_attributes[$attribute][self::INSTANCE] = UploadedFile::getInstances($this->owner, $attribute);
-        $is_old_files_are_kept = $this->file_attributes[$attribute][self::IS_OLD_FILES_ARE_KEPT];
-        if(!$is_old_files_are_kept) {
-            $instances = $this->file_attributes[$attribute][self::INSTANCE];
-            if(count($instances) > 0) {
-                if(!$this->owner->isNewRecord) {
-                    /** @var string|MainActiveRecord $store_model_class */
-                    $store_model_attribute = $this->file_attributes[$attribute][self::STORE_MODEL_ATTRIBUTE];
-                    $files = $this->findRelatedModel($attribute);
-                    foreach($files as $file) {
-                        if($file->delete()) {
-                            if(!empty($store_model_attribute)) {
-                                $this->removeFile($this->getFileSavePath($attribute) . $file->$store_model_attribute);
-                                $this->deleteSimilarFiles($this->getFileSavePath($attribute) .
-                                                          $file->$store_model_attribute);
-                            }
-                        }
-                    }
-                }
-            }
+    /**
+     * Generates file folder name from an owner model
+     * @param $attribute
+     * @throws InvalidParamException
+     * @return string
+     */
+    public function getFileFolderName($attribute) {
+        $file_folder_attribute = $this->file_attributes[$attribute][self::FILE_FOLDER_ATTRIBUTE];
+        if(empty($file_folder_attribute)) {
+            throw new InvalidParamException('FILE_FOLDER_ATTRIBUTE can not be empty');
         }
+        $file_folder_name = $this->owner->{$file_folder_attribute};
+        if($this->file_attributes[$attribute][self::IS_ENCRYPT]) {
+            return Encryption::encode($file_folder_name);
+        }
+        else return $file_folder_name;
     }
 
 
-    public function afterValidationProcessSingle($attribute) {
-        $this->file_attributes[$attribute][self::INSTANCE] = UploadedFile::getInstance($this->owner, $attribute);
-        if($this->file_attributes[$attribute][self::INSTANCE] instanceof UploadedFile) {
+    public function afterValidationProcess($attribute) {
+        $this->file_attributes[$attribute][self::INSTANCE] =
+        $file_instance = UploadedFile::getInstance($this->owner, $attribute);
+        if($file_instance instanceof UploadedFile) {
             if(!$this->owner->isNewRecord) {
                 if(isset($this->owner->oldAttributes[$attribute])) {
-                    $this->removeFile($this->getFileSavePath($attribute) . $this->owner->oldAttributes[$attribute]);
+                    $this->_unlink($this->getFileSaveDir($attribute) . $this->owner->oldAttributes[$attribute]);
                 }
             }
-            $this->owner->$attribute =
-                $this->getFileName() . '.' . $this->file_attributes[$attribute][self::INSTANCE]->extension;
+            $this->owner->$attribute = $this->composeFileName($attribute);
         }
         else {
             if(isset($this->owner->oldAttributes[$attribute]) && $this->owner->oldAttributes) {
@@ -221,56 +211,22 @@ class FileSaveBehavior extends Behavior
     }
 
 
-    public function findRelatedModel($attribute) {
-        if($this->isMultiple($attribute)) {
-            $files = $this->getRelatedModelsQuery($attribute)->all();
-            return $files;
-        }
-        return [];
-    }
-
-
-    /**
-     * @param $attribute
-     * @return ActiveQuery
-     */
-    public function getRelatedModelsQuery($attribute) {
-        /** @var MainActiveRecord $store_model_class */
-        $store_model_class = $this->file_attributes[$attribute][self::STORE_MODEL_CLASS];
-        $store_relation_attribute = $this->file_attributes[$attribute][self::STORE_RELATION_ATTRIBUTE];
-        $store_type_attribute = $this->file_attributes[$attribute][self::STORE_TYPE_ATTRIBUTE];
-        $store_model_type = $this->file_attributes[$attribute][self::STORE_MODEL_TYPE];
-        $query = $store_model_class::find()
-                                   ->where([$store_relation_attribute => $this->owner->id])
-                                   ->andWhere([$store_type_attribute => $store_model_type]);
-        return $query;
-    }
-
-
-    public function getObjectDir($attribute) {
-        if(isset($this->file_attributes[$attribute][self::IS_ENCRYPT])
-           && $this->file_attributes[$attribute][self::IS_ENCRYPT]
-        ) {
-            return Encryption::encode($this->owner->id);
-        }
-        else return $this->owner->id;
-    }
-
-
-    public function afterValidationProcess($attribute) {
-        if($this->isMultiple($attribute)) {
-            $this->afterValidationProcessMultiple($attribute);
-        }
-        else {
-            $this->afterValidationProcessSingle($attribute);
-        }
-    }
-
-
     public function afterValidate($event) {
         foreach($this->file_attributes as $file_attribute => $property) {
-            self::afterValidationProcess($file_attribute);
+            $this->afterValidationProcess($file_attribute);
         }
+    }
+
+
+    public static function isDirEmpty($dir) {
+        if(!is_readable($dir)) return null;
+        $handle = opendir($dir);
+        while(false !== ($entry = readdir($handle))) {
+            if($entry != "." && $entry != "..") {
+                return false;
+            }
+        }
+        return true;
     }
 
 
@@ -320,103 +276,39 @@ class FileSaveBehavior extends Behavior
     }
 
 
-    public function postSavingProcessMultiple($attribute) {
-        if(isset($this->file_attributes[$attribute][self::INSTANCE])) {
-            $instances = $this->file_attributes[$attribute][self::INSTANCE];
-            if(is_array($instances) && count($instances)) {
-                self::prepareFolderTunnel($this->getFileSavePath($attribute),
-                                          $this->getFileSaveDir($attribute),
-                                          $this->getBackendViewDir($attribute),
-                                          $this->getFrontendViewDir($attribute)
-                );
-                $store_model_class = $this->file_attributes[$attribute][self::STORE_MODEL_CLASS];
-                $store_type_attribute = $this->file_attributes[$attribute][self::STORE_TYPE_ATTRIBUTE];
-                $store_model_type = $this->file_attributes[$attribute][self::STORE_MODEL_TYPE];
-                $store_model_attribute = $this->file_attributes[$attribute][self::STORE_MODEL_ATTRIBUTE];
-                $store_relation_attribute = $this->file_attributes[$attribute][self::STORE_RELATION_ATTRIBUTE];
-                $is_old_files_are_kept = $this->file_attributes[$attribute][self::IS_OLD_FILES_ARE_KEPT];
-                if($is_old_files_are_kept) {
-                    if(!is_array($this->owner->$attribute)) {
-                        $this->owner->$attribute = [];
-                    }
-                }
-                else $this->owner->$attribute = [];
-                foreach($instances as $instance) {
-                    if($instance instanceof UploadedFile) {
-                        /** @var MainActiveRecord $store_model */
-                        $store_model = new $store_model_class;
-                        $file_name = $this->getFileName();
-                        $file_extension = $instance->extension;
-                        $store_model->$store_model_attribute = $file_name . '.' . $file_extension;
-                        $store_model->$store_type_attribute = $store_model_type;
-                        $store_model->$store_relation_attribute = $this->owner->id;
-                        if($store_model->save()) {
-                            $this->owner->$attribute[$store_model->id] = $store_model->$store_model_attribute;
-                            $file_full_path = $this->getFileSavePath($attribute) . $store_model->$store_model_attribute;
-                            if($instance->saveAs($file_full_path)) {
-                                if(isset(self::getFileAttributeParams($attribute)[self::ON_SAVE])
-                                   && is_callable(self::getFileAttributeParams($attribute)[self::ON_SAVE])
-                                ) {
-                                    call_user_func_array(
-                                        self::getFileAttributeParams($attribute)[self::ON_SAVE],
-                                        [$attribute, $file_full_path, $this->getFileSavePath($attribute), $file_name,
-                                         $file_extension]);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-
-    public function postSavingProcessSingle($attribute) {
-        if(isset(self::getFileAttributeParams($attribute)[self::INSTANCE])) {
-            if($this->file_attributes[$attribute][self::INSTANCE] instanceof UploadedFile) {
-                self::prepareFolderTunnel($this->getFileSavePath($attribute),
-                                          $this->getFileSaveDir($attribute),
-                                          $this->getBackendViewDir($attribute),
-                                          $this->getFrontendViewDir($attribute)
-                );
-                if($this->file_attributes[$attribute][self::INSTANCE]->saveAs($this->getFileSavePath($attribute)
-                                                                              . $this->owner->$attribute)
-                ) {
-                    if(isset(self::getFileAttributeParams($attribute)[self::ON_SAVE])
-                       && is_callable(self::getFileAttributeParams($attribute)[self::ON_SAVE])
-                    ) {
-                        call_user_func_array(
-                            self::getFileAttributeParams($attribute)[self::ON_SAVE],
-                            [$attribute, $this->getFileSavePath($attribute) . $this->owner->$attribute,
-                             $this->owner->$attribute]);
-                    }
-                }
-            }
-        }
-    }
-
-
     public function postSavingProcess($attribute) {
-        if($this->isMultiple($attribute)) {
-            $this->postSavingProcessMultiple($attribute);
-        }
-        else {
-            $this->postSavingProcessSingle($attribute);
+        if($this->file_attributes[$attribute][self::INSTANCE] instanceof UploadedFile) {
+            $this->prepareFolderTunnel($this->getFileSaveDir($attribute),
+                                       $this->getFileBaseSaveDir($attribute),
+                                       $this->getBackendViewDir($attribute),
+                                       $this->getFrontendViewDir($attribute)
+            );
+            $file_path = $this->getFileSaveDir($attribute) . $this->owner->$attribute;
+            if($this->getFileInstance($attribute)->saveAs($file_path)) {
+                $this->owner->trigger(static::EVENT_FILE_SAVE,
+                                      new FileSaveEvent([FileSaveEvent::FILE_ATTRIBUTE => $attribute,
+                                                         FileSaveEvent::FILE_PATH => $file_path]));
+            }
         }
     }
 
 
     public function afterSave($event) {
         foreach($this->file_attributes as $file_attribute => $property) {
-            self::postSavingProcess($file_attribute);
+            $this->postSavingProcess($file_attribute);
         }
     }
 
 
+    /**
+     * @param $file_attribute
+     * @return UploadedFile | null
+     */
     public function getFileInstance($file_attribute) {
         if(isset($this->file_attributes[$file_attribute])) {
-            $this->file_attributes[$file_attribute][self::INSTANCE];
+            return $this->file_attributes[$file_attribute][self::INSTANCE];
         }
+        else return null;
     }
 
 
@@ -428,15 +320,25 @@ class FileSaveBehavior extends Behavior
     }
 
 
+    /**
+     * Returns a path to a backend folder (symlink)
+     * @param $file_attribute
+     * @return bool|null|string
+     */
     public function getBackendViewDir($file_attribute) {
         $path = null;
-        if(isset(self::getFileAttributeParams($file_attribute)[self::BACKEND_VIEW_DIR])) {
-            $path = Yii::getAlias(self::getFileAttributeParams($file_attribute)[self::BACKEND_VIEW_DIR]);
+        if(isset($this->file_attributes[$file_attribute][self::BACKEND_VIEW_DIR])) {
+            $path = Yii::getAlias($this->file_attributes[$file_attribute][self::BACKEND_VIEW_DIR]);
         }
         return $path;
     }
 
 
+    /**
+     * Returns a path to a frontend folder (symlink)
+     * @param $file_attribute
+     * @return bool|null|string
+     */
     public function getFrontendViewDir($file_attribute) {
         $path = null;
         if(isset(self::getFileAttributeParams($file_attribute)[self::FRONTEND_VIEW_DIR])) {
@@ -446,115 +348,72 @@ class FileSaveBehavior extends Behavior
     }
 
 
-    /**@method getFileSaveDir
+    /**
+     * Returns a base folder for all files from current group of files, set by $file_attribute
+     * Eventual folder of a certain file depends on an owner model @see getFileSaveDir
      * @param $file_attribute
      * @return bool|string
      */
-    public function getFileSaveDir($file_attribute) {
-        if(isset(self::getFileAttributeParams($file_attribute)[self::FILE_SAVE_DIR])) {
-            return Yii::getAlias(self::getFileAttributeParams($file_attribute)[self::FILE_SAVE_DIR]);
+    public function getFileBaseSaveDir($file_attribute) {
+        if(isset(self::getFileAttributeParams($file_attribute)[self::FILE_BASE_SAVE_DIR])) {
+            return Yii::getAlias(self::getFileAttributeParams($file_attribute)[self::FILE_BASE_SAVE_DIR]);
         }
         else throw new InvalidParamException();
     }
 
 
-    /**@method getFileViewDir
+    /**
+     * Returns a file root folder, which depends on an owner model
      * @param $file_attribute
-     * @return bool|string
+     * @return string
      */
-    public function getFileViewDir($file_attribute) {
-        if(isset(self::getFileAttributeParams($file_attribute)[self::FILE_VIEW_DIR])) {
-            return Yii::getAlias(self::getFileAttributeParams($file_attribute)[self::FILE_VIEW_DIR]);
-        }
-        else throw new InvalidParamException();
+    public function getFileSaveDir($file_attribute) {
+        return self::getFileBaseSaveDir($file_attribute) . self::getFileFolderName($file_attribute) .
+               DIRECTORY_SEPARATOR;
     }
 
 
     /**@method getFileViewUrl
+     * Returns a file root folder
      * @param $file_attribute
      * @return bool|string
      */
-    public function getFileViewUrl($file_attribute) {
-        if(isset(self::getFileAttributeParams($file_attribute)[self::FILE_VIEW_URL])) {
-            return Yii::getAlias(self::getFileAttributeParams($file_attribute)[self::FILE_VIEW_URL]);
+    public function getFileViewBaseUrl($file_attribute) {
+        if(isset(self::getFileAttributeParams($file_attribute)[self::FILE_VIEW_BASE_URL])) {
+            return Yii::getAlias(self::getFileAttributeParams($file_attribute)[self::FILE_VIEW_BASE_URL]);
         }
         else throw new InvalidParamException();
     }
 
 
-    /** @method getFileSavePath
-     * @param $file_attribute
-     * @return string
-     */
-    public function getFileSavePath($file_attribute) {
-        return self::getFileSaveDir($file_attribute) . self::getObjectDir($file_attribute) . DIRECTORY_SEPARATOR;
-    }
-
-
     /** @method getFileViewPath
      * @param $file_attribute
      * @return string
      */
-    public function getFileViewPath($file_attribute) {
-        return self::getFileViewUrl($file_attribute) . '/' . self::getObjectDir($file_attribute) . '/';
+    public function getFileViewUrl($file_attribute) {
+        return self::getFileViewBaseUrl($file_attribute) . '/' . self::getFileFolderName($file_attribute) . '/';
     }
 
 
     /** @method getFileViewPath
-     * @param $file_attribute
+     * @param $attribute
      * @param bool $scheme
      * @param bool $append_timestamp
      * @return string
      */
-    public function getFile($file_attribute, $scheme = false, $append_timestamp = false) {
-        $result = null;
-        if($this->isMultiple($file_attribute)) {
-            $result = [];
-            if(is_array($this->owner->$file_attribute) && count($this->owner->$file_attribute)) {
-                $files = $this->owner->$file_attribute;
-                foreach($files as $file) {
-                    $result[] = $this->getFileByName($files, $file_attribute, $scheme, $append_timestamp);
-                }
-            }
-            else {
-                $files = $this->findRelatedModel($file_attribute);
-                $store_model_attribute = $this->file_attributes[$file_attribute][self::STORE_MODEL_ATTRIBUTE];
-                foreach($files as $file) {
-                    $result[] = $this->getFileByName($file->$store_model_attribute, $file_attribute, $scheme,
-                                                     $append_timestamp);
-                }
-            }
-        }
-        else {
-            $result = $this->getFileByName($this->owner->$file_attribute, $file_attribute, $scheme, $append_timestamp);
-        }
+    public function getFile($attribute, $scheme = false, $append_timestamp = false) {
+        $result = $this->getFileByName($this->owner->$attribute, $attribute, $scheme, $append_timestamp);
         return $result;
     }
 
 
-    public function getFileByRelationId($id, $file_attribute, $scheme = false, $append_timestamp = false) {
-        $store_model_attribute = $this->file_attributes[$file_attribute][self::STORE_MODEL_ATTRIBUTE];
-        $model = $this->getRelatedModelsQuery($file_attribute)->andWhere(['id' => $id])->one();
-        $file = $this->getFileByName($model->$store_model_attribute, $file_attribute, $scheme, $append_timestamp);
-        return $file;
-    }
-
-
-    public function getFilePhysicalPath($file_attribute) {
-        return $this->getFileSavePath($file_attribute) . $this->owner->$file_attribute;
-    }
-
-
-    public function getFilePhysicalPathByRelationId($file_attribute, $id) {
-        $store_model_attribute = $this->file_attributes[$file_attribute][self::STORE_MODEL_ATTRIBUTE];
-        $model = $this->getRelatedModelsQuery($file_attribute)->andWhere(['id' => $id])->one();
-        $file = $this->getFileSavePath($file_attribute) . $model->$store_model_attribute;
-        return $file;
+    public function getFilePhysicalPath($attribute) {
+        return $this->getFileSaveDir($attribute) . $this->owner->$attribute;
     }
 
 
     public function deleteFile($file_attribute) {
-        if($this->removeFile($this->getFilePhysicalPath($file_attribute))) {
+        if($this->_unlink($this->getFilePhysicalPath($file_attribute))) {
             $this->owner->$file_attribute = null;
             $this->owner->updateAttributes([$file_attribute]);
             return true;
@@ -563,25 +422,14 @@ class FileSaveBehavior extends Behavior
     }
 
 
-    public function deleteFileByRelationId($file_attribute, $id) {
-        $store_model_attribute = $this->file_attributes[$file_attribute][self::STORE_MODEL_ATTRIBUTE];
-        $model = $this->getRelatedModelsQuery($file_attribute)->andWhere(['id' => $id])->one();
-        $file = $this->getFileSavePath($file_attribute) . $model->$store_model_attribute;
-        if($model->delete()) {
-            $this->removeFile($file);
-            return true;
-        }
-        else return false;
-    }
-
-
     public function getFileByName($name, $attribute, $scheme = false, $append_timestamp = false) {
-        $file_path = self::getFileSavePath($attribute) . $name;
-        if($append_timestamp && ($timestamp = @filemtime($file_path)) > 0) {
-            $file = self::getFileViewPath($attribute) . $name . '?timestamp=' . $timestamp;
+        $file_save_path = self::getFileSaveDir($attribute) . $name;
+        $file_view_path = self::getFileViewUrl($attribute) . $name;
+        if($append_timestamp && ($timestamp = @filemtime($file_save_path)) > 0) {
+            $file = $file_view_path . '?timestamp=' . $timestamp;
         }
         else {
-            $file = self::getFileViewPath($attribute) . $name;
+            $file = $file_view_path;
         }
         if($scheme) {
             return Url::to([$file], $scheme);
@@ -595,6 +443,16 @@ class FileSaveBehavior extends Behavior
      */
     public function getFileName() {
         return Yii::$app->security->generateRandomString(16);
+    }
+
+
+    public function composeFileName($attribute) {
+        $instance = $this->file_attributes[$attribute][self::INSTANCE];
+        if($instance instanceof UploadedFile) {
+            $file_name = $this->getFileName() . '.' . $instance->extension;
+            return $file_name;
+        }
+        else return null;
     }
 
 
