@@ -1,7 +1,7 @@
 <?php
 namespace dezmont765\yii2bundle\controllers;
+use app\filters\LayoutFilter;
 
-use dezmont765\yii2bundle\filters\PageSaver;
 use dezmont765\yii2bundle\models\MainActiveRecord;
 use Yii;
 use yii\bootstrap\ActiveForm;
@@ -31,9 +31,9 @@ class MainController extends Controller
             self::ACCESS_FILTER => [
                 'class' => AccessControl::className(),
             ],
-            self::PAGE_SAVER_FILTER => [
-                'class' => PageSaver::className(),
-            ]
+//            self::PAGE_SAVER_FILTER => [
+//                'class' => PageSaver::className(),
+//            ]
         ];
     }
 
@@ -179,5 +179,17 @@ class MainController extends Controller
 
     public function getModelClass() {
         return '';
+    }
+
+
+    public function getRoleToLayoutMap($role) {
+        return [];
+    }
+
+
+    public function getLayoutByRole() {
+        $role = LayoutFilter::getRole();
+        $layouts = $this->getRoleToLayoutMap($role);
+        return $layouts;
     }
 }
