@@ -1,6 +1,7 @@
 <?php
 namespace dezmont765\yii2bundle\behaviors;
 
+use common\components\Params;
 use dezmont765\yii2bundle\components\Encryption;
 use dezmont765\yii2bundle\events\FileSaveEvent;
 use dezmont765\yii2bundle\models\MainActiveRecord;
@@ -68,6 +69,8 @@ class FileSaveBehavior extends Behavior
     const PK_ATTRIBUTE = 'pk_attribute';
 
     public $file_attributes = [];
+
+    private $encryption_key = '@lama-save-behavior-2017';
 
 
     public function requiredParams() {
@@ -186,7 +189,9 @@ class FileSaveBehavior extends Behavior
         }
         $file_folder_name = $this->owner->{$file_folder_attribute};
         if($this->file_attributes[$attribute][self::IS_ENCRYPT]) {
-            return Encryption::encode($file_folder_name);
+//            Yii::$app->security->encryptByKey($file_folder_name,$this->encryption_key);
+            //todo : Encryption is not working
+            return $file_folder_name;
         }
         else return $file_folder_name;
     }

@@ -9,7 +9,6 @@ namespace dezmont765\yii2bundle\actions;
 
 abstract class SelectionAction extends MainAction {
     public $key = 'id';
-    public $model_class = null;
     public $attribute = 'name';
     public $return_wrap = null;
     public $query_param = 'id';

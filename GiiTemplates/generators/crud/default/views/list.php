@@ -55,7 +55,10 @@ if (($tableSchema = $generator->getTableSchema()) === false) {
 }
 ?>
 
-            ['class' => 'yii\grid\ActionColumn'],
+            [
+                'class' => 'yii\grid\ActionColumn',
+                'template' => '{update}{delete}'
+            ],
         ],
     ]); ?>
     <?= '<?php '?> echo Html::button('Delete',['class'=>'btn btn-danger','id'=>'delete-<?=$generator->getControllerID()?>'])?>

@@ -1,7 +1,6 @@
 <?php
 namespace dezmont765\yii2bundle\actions;
 
-use console\controllers\RbacController;
 use dezmont765\yii2bundle\components\Alert;
 use Exception;
 
@@ -15,6 +14,9 @@ class DeleteAction extends MainAction
 {
 
     public $error_message = 'Item has not been deleted';
+    public $is_redirect = true;
+    public $redirect_url = ['list'];
+
 
     public function run($id) {
         try {
@@ -26,7 +28,10 @@ class DeleteAction extends MainAction
         catch(Exception $e) {
             Alert::addError($this->error_message, $e->getMessage());
         }
-        return $this->controller->redirect(['list']);
+        if($this->is_redirect) {
+            return $this->controller->redirect($this->redirect_url);
+        }
+        else return true;
     }
 
 }

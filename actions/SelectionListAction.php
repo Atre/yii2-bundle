@@ -21,7 +21,7 @@ class SelectionListAction extends SelectionAction
         /** @var MainActiveRecord $model */
         Yii::$app->response->format = Response::FORMAT_JSON;
         $value = Yii::$app->request->getQueryParam($this->query_param);
-        $model_class = $this->model_class;
+        $model_class = $this->getModelClass();
         $model = new $model_class;
         $models = $model->searchByAttribute($this->attribute, $value);
         $model_array = [];

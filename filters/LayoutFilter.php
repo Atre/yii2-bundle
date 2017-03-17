@@ -35,8 +35,8 @@ class LayoutFilter extends ActionFilter
         $controller = $action->controller;
         $view = $action->controller->getView();
         $controller->activeMap = array_merge(static::getActiveMap(),$controller->activeMap);
-        $action->controller->layout = static::$layout;
         $view->setLayoutData(static::layout($controller->getTabsActivity()));
+        $action->controller->layout = static::$layout;
         return parent::beforeAction($action);
     }
 

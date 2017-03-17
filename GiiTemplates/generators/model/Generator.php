@@ -5,7 +5,7 @@
  * @license http://www.yiiframework.com/license/
  */
 
-namespace app\giitemplates\generators\model;
+namespace dezmont765\yii2bundle\giitemplates\generators\model;
 
 use Yii;
 use yii\db\ActiveRecord;
@@ -27,7 +27,7 @@ class Generator extends \yii\gii\Generator
     public $ns = 'common\models';
     public $tableName;
     public $modelClass;
-    public $baseClass = 'common\models\MainActiveRecord';
+    public $baseClass = 'dezmont765\yii2bundle\models\MainActiveRecord';
     public $generateRelations = true;
     public $generateLabelsFromComments = false;
     public $useTablePrefix = false;

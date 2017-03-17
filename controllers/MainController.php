@@ -1,7 +1,6 @@
 <?php
 namespace dezmont765\yii2bundle\controllers;
-use app\filters\LayoutFilter;
-
+use dezmont765\yii2bundle\filters\LayoutFilter;
 use dezmont765\yii2bundle\models\MainActiveRecord;
 use Yii;
 use yii\bootstrap\ActiveForm;

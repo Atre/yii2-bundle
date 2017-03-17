@@ -17,7 +17,7 @@ class CreateAction extends MainAction
         /** @var $model_class MainActiveRecord|string */
         /** @var $model MainActiveRecord */
         $model_class = $this->getModelClass();
-        $model = new $model_class(['scenario' => 'create']);
+        $model = new $model_class();
         $this->controller->checkAccess($this->permission, ['model' => $model]);
         if($model->load(\Yii::$app->request->post())) {
             if($model->save()) {

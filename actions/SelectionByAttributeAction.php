@@ -21,7 +21,7 @@ class SelectionByAttributeAction extends SelectionAction
         /** @var MainActiveRecord $model_class */
         /** @var MainActiveRecord $model */
         $value = Yii::$app->request->getQueryParam($this->query_param);
-        $model_class = $this->model_class;
+        $model_class = $this->getModelClass();
         $model = new $model_class;
         if($this->is_multiple) {
             $ids = explode($this->delimiter, $value);
