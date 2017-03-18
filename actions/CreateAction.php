@@ -12,12 +12,14 @@ use dezmont765\yii2bundle\models\MainActiveRecord;
 class CreateAction extends MainAction
 {
 
+    public $model_scenario = [];
+
 
     public function run() {
         /** @var $model_class MainActiveRecord|string */
         /** @var $model MainActiveRecord */
         $model_class = $this->getModelClass();
-        $model = new $model_class();
+        $model = new $model_class($this->model_scenario);
         $this->controller->checkAccess($this->permission, ['model' => $model]);
         if($model->load(\Yii::$app->request->post())) {
             if($model->save()) {

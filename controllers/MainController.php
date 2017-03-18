@@ -191,4 +191,11 @@ class MainController extends Controller
         $layouts = $this->getRoleToLayoutMap($role);
         return $layouts;
     }
+
+
+    public function getActiveMap() {
+        return [
+
+        ];
+    }
 }

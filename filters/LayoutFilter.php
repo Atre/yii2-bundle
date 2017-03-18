@@ -8,6 +8,7 @@
 
 namespace dezmont765\yii2bundle\filters;
 
+use console\controllers\RbacController;
 use dezmont765\yii2bundle\controllers\MainController;
 use dezmont765\yii2bundle\views\MainView;
 use yii\base\ActionFilter;
@@ -34,7 +35,7 @@ class LayoutFilter extends ActionFilter
          */
         $controller = $action->controller;
         $view = $action->controller->getView();
-        $controller->activeMap = array_merge(static::getActiveMap(),$controller->activeMap);
+        $controller->activeMap = array_merge(static::getActiveMap(),$controller->getActiveMap());
         $view->setLayoutData(static::layout($controller->getTabsActivity()));
         $action->controller->layout = static::$layout;
         return parent::beforeAction($action);
@@ -57,7 +58,7 @@ class LayoutFilter extends ActionFilter
         {
             if(\Yii::$app->user->isGuest)
             {
-                self::$role = "Guest";
+                self::$role = RbacController::guest;
             }
             else
             {
