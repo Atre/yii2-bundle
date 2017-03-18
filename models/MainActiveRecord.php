@@ -15,6 +15,7 @@ use yii\db\ActiveRecord;
 use yii\db\BaseActiveRecord;
 use yii\db\StaleObjectException;
 use yii\db\Transaction;
+use yii\helpers\ArrayHelper;
 
 /**
  *
@@ -234,5 +235,10 @@ class MainActiveRecord extends ActiveRecord
         return $attributes;
     }
 
+    public static function asArray($key, $value) {
+        $models = static::find()->all();
+        $models = ArrayHelper::map($models, $key, $value);
+        return $models;
+    }
 
 }
