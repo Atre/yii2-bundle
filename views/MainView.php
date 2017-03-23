@@ -30,7 +30,11 @@ class MainView extends View
 
     public function endBody() {
         parent::endBody();
-        echo $this->blocks['scripts'];
+        if(is_array($this->blocks)) {
+            foreach($this->blocks as $block) {
+                echo $block;
+            }
+        }
     }
 
 }

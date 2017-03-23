@@ -28,6 +28,7 @@ use Yii;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
 use <?= ltrim($generator->modelClass, '\\') . (isset($modelAlias) ? " as $modelAlias" : "") ?>;
+use yii\db\ActiveQuery;
 
 /**
  * <?= $searchModelClass ?> represents the model behind the search form about `<?= $generator->modelClass ?>`.
@@ -54,30 +55,32 @@ class <?= $searchModelClass ?> extends <?= isset($modelAlias) ? $modelAlias : $m
         return Model::scenarios();
     }
 
-    /**
-     * Creates data provider instance with search query applied
-     *
-     * @param array $params
-     *
-     * @return ActiveDataProvider
-     */
-    public function search($params = [])
-    {
+    public function baseSearchQuery() {
         $query = <?= isset($modelAlias) ? $modelAlias : $modelClass ?>::find();
+        <?= implode("\n        ", $searchConditions) ?>
+        return $query;
+    }
+
+    /**
+    * Creates data provider instance with search query applied
+    *
+    * @param ActiveQuery $query
+    *
+    * @return ActiveDataProvider
+    */
+    public function search(ActiveQuery $query = null)
+    {
+        if($query === null) {
+            $query = <?= isset($modelAlias) ? $modelAlias : $modelClass ?>::find();
+        }
+
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
+            'pagination' => ['pageSize' => 15]
         ]);
 
-        $this->load($params);
-
-        if (!$this->validate()) {
-            // uncomment the following line if you do not want to any records when validation fails
-            // $query->where('0=1');
-            return $dataProvider;
-        }
-
-        <?= implode("\n        ", $searchConditions) ?>
+        $dataProvider->sort->attributes+= [];
 
         return $dataProvider;
     }

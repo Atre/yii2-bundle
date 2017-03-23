@@ -9,6 +9,7 @@ namespace dezmont765\yii2bundle\models;
 
 use DateTime;
 use dezmont765\yii2bundle\components\Alert;
+use dezmont765\yii2bundle\traits\TSearch;
 use Exception;
 use Yii;
 use yii\db\ActiveRecord;

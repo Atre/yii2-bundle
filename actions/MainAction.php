@@ -2,7 +2,10 @@
 namespace dezmont765\yii2bundle\actions;
 
 use dezmont765\yii2bundle\controllers\MainController;
+use Yii;
 use yii\base\Action;
+use yii\web\Response;
+use yii\widgets\ActiveForm;
 
 /**
  * Created by PhpStorm.
@@ -19,6 +22,18 @@ class MainAction extends Action
     public $view = null;
     public $permission = null;
     public $permission_params = null;
+
+
+
+    public function ajaxValidation($model) {
+        $result = null;
+        if(Yii::$app->request->isAjax && $model->load(Yii::$app->request->post())) {
+            Yii::$app->response->format = Response::FORMAT_JSON;
+            $result = ActiveForm::validate($model);
+        }
+
+        return $result;
+    }
 
 
     public function getModelClass() {

@@ -20,6 +20,10 @@ class CreateAction extends MainAction
         /** @var $model MainActiveRecord */
         $model_class = $this->getModelClass();
         $model = new $model_class($this->model_scenario);
+        $result = parent::ajaxValidation($model);
+        if ($result !== null) {
+            return $result;
+        }
         $this->controller->checkAccess($this->permission, ['model' => $model]);
         if($model->load(\Yii::$app->request->post())) {
             if($model->save()) {

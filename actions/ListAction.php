@@ -21,7 +21,7 @@ class ListAction extends MainAction
         $search_class = $this->getModelClass();
         $search_model = new $search_class;
         $search_model->load(Yii::$app->request->queryParams);
-        $dataProvider = $search_model->search();
+        $dataProvider = $search_model->search($search_model->baseSearchQuery());
         return $this->controller->render($this->getView(), [
             'searchModel' => $search_model,
             'dataProvider' => $dataProvider,

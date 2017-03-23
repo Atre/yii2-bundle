@@ -16,6 +16,10 @@ class UpdateAction extends MainAction
     public function run($id) {
         $model_class = $this->getModelClass();
         $model = $this->controller->findModel($model_class, $id);
+        $result = parent::ajaxValidation($model);
+        if ($result !== null) {
+            return $result;
+        }
         $this->controller->checkAccess($this->permission, ['model' => $model]);
         if($model->load(Yii::$app->request->post()) && $model->save()) {
             return $this->controller->redirect(['list']);

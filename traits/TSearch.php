@@ -34,4 +34,12 @@ trait TSearch
             $data_provider->sort->defaultOrder = $default_order;
         return $data_provider;
     }
+
+
+    /**
+     * @return ActiveQuery
+     */
+    public function baseSearchQuery() {
+
+    }
 }
