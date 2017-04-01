@@ -1,6 +1,7 @@
 <?php
 namespace dezmont765\yii2bundle\actions;
 
+use dezmont765\yii2bundle\components\Alert;
 use Yii;
 
 /**
@@ -17,18 +18,21 @@ class UpdateAction extends MainAction
         $model_class = $this->getModelClass();
         $model = $this->controller->findModel($model_class, $id);
         $result = parent::ajaxValidation($model);
-        if ($result !== null) {
+        if($result !== null) {
             return $result;
         }
         $this->controller->checkAccess($this->permission, ['model' => $model]);
-        if($model->load(Yii::$app->request->post()) && $model->save()) {
-            return $this->controller->redirect(['list']);
+        if($model->load(Yii::$app->request->post())) {
+            if($model->save()) {
+                Alert::addSuccess('Saved successfully');
+            }
+            else {
+                Alert::addError('Has not been saved', $model->errors);
+            }
         }
-        else {
-            return $this->controller->render($this->getView(), [
-                'model' => $model,
-            ]);
-        }
+        return $this->controller->render($this->getView(), [
+            'model' => $model,
+        ]);
     }
 
 
