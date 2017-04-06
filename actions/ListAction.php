@@ -19,13 +19,17 @@ class ListAction extends MainAction
     public function run() {
         /** @var TSearch|MainActiveRecord $search_model */
         $search_class = $this->getModelClass();
+        $additional_params = [];
+        foreach($this->additional_params as $additional_param) {
+            $additional_params[$additional_param] = Yii::$app->request->get($additional_param);
+        }
         $search_model = new $search_class;
         $search_model->load(Yii::$app->request->queryParams);
         $dataProvider = $search_model->search($search_model->baseSearchQuery());
-        return $this->controller->render($this->getView(), [
-            'searchModel' => $search_model,
-            'dataProvider' => $dataProvider,
-        ]);
+        return $this->controller->{$this->render_method}($this->getView(), [
+                                                                               'searchModel' => $search_model,
+                                                                               'dataProvider' => $dataProvider,
+                                                                           ] + $additional_params);
     }
 
 

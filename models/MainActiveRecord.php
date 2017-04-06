@@ -9,8 +9,8 @@ namespace dezmont765\yii2bundle\models;
 
 use DateTime;
 use dezmont765\yii2bundle\components\Alert;
-use dezmont765\yii2bundle\traits\TSearch;
 use Exception;
+use ReflectionClass;
 use Yii;
 use yii\db\ActiveRecord;
 use yii\db\BaseActiveRecord;
@@ -68,7 +68,6 @@ class MainActiveRecord extends ActiveRecord
         }
         $changedAttributes = [];
         foreach($values as $name => $value) {
-            
             $changedAttributes[$name] =
                 isset($this->_oldAttributes[$name])
                 // it is the additional check for case when an attribute was null
@@ -191,9 +190,8 @@ class MainActiveRecord extends ActiveRecord
         /**
          * @var ActiveRecord $model
          */
-        $class = get_called_class();
-        $model = new $class;
-        return $model->formName();
+        $reflector = new ReflectionClass(get_called_class());
+        return $reflector->getShortName();
     }
 
 
@@ -236,10 +234,12 @@ class MainActiveRecord extends ActiveRecord
         return $attributes;
     }
 
+
     public static function asArray($key, $value) {
         $models = static::find()->all();
         $models = ArrayHelper::map($models, $key, $value);
         return $models;
     }
+
 
 }

@@ -22,7 +22,8 @@ class MainAction extends Action
     public $view = null;
     public $permission = null;
     public $permission_params = null;
-
+    public $render_method = 'render';
+    public $additional_params = [];
 
 
     public function ajaxValidation($model) {
