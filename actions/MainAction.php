@@ -24,6 +24,8 @@ class MainAction extends Action
     public $permission_params = null;
     public $render_method = 'render';
     public $additional_params = [];
+    public $is_redirect = true;
+    public $redirect_url = ['list'];
 
 
     public function ajaxValidation($model) {

@@ -14,8 +14,7 @@ class DeleteAction extends MainAction
 {
 
     public $error_message = 'Item has not been deleted';
-    public $is_redirect = true;
-    public $redirect_url = ['list'];
+
 
 
     public function run($id) {
