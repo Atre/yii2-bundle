@@ -11,10 +11,18 @@ use dezmont765\yii2bundle\components\Alert;
  */
 abstract class ManageAction extends MainAction
 {
+
+    const ON_MODEL_CLASS_RETRIEVING = 'on_model_class_retrieving';
+    const ON_MODEL_RETRIEVING = 'on_model_retrieving';
+    const ON_BEFORE_VALIDATION = 'on_before_validation';
+    const ON_SUCCESSFUL_SAVE = 'on_successful_save';
+    const on_unsuccessful_save = 'on_unsuccessful_save';
+    const ON_DEFAULT_RETURN = 'on_default_return';
+
     public $on_model_class_retrieving = 'self::onModelClassRetrieving';
     public $on_model_retrieving = 'self::onModelRetrieving';
     public $on_before_validation = null;
-    public $on_successful__save = 'self::onSuccessfulSave';
+    public $on_successful_save = 'self::onSuccessfulSave';
     public $on_unsuccessful_save = 'self::onUnsuccessfulSave';
     public $on_default_return = 'self::onDefaultReturn';
     public $is_ajax_validation = true;
@@ -52,15 +60,15 @@ abstract class ManageAction extends MainAction
     }
 
 
-    protected function onSuccessSave() {
+    protected function onSuccessfulSave() {
         Alert::addSuccess('Item has been saved');
         return $this->controller->redirect(['list']);
     }
 
 
     private function successfulSave() {
-        if(is_callable($this->on_successful__save)) {
-            return call_user_func($this->on_successful__save);
+        if(is_callable($this->on_successful_save)) {
+            return call_user_func($this->on_successful_save);
         }
         else return $this->onSuccessSave();
     }
