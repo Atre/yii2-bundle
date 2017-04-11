@@ -93,6 +93,12 @@ class MainActiveRecord extends ActiveRecord
     }
 
 
+    public function fields() {
+        $fields = ArrayHelper::merge(parent::fields(), $this->safeAttributes());
+        return $fields;
+    }
+
+
     public function searchByIds(array $ids) {
         $query = self::find();
         $query->filterWhere(['id' => $ids]);
