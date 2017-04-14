@@ -4,6 +4,7 @@ use dezmont765\yii2bundle\filters\LayoutFilter;
 use dezmont765\yii2bundle\models\MainActiveRecord;
 use Yii;
 use yii\bootstrap\ActiveForm;
+use yii\db\ActiveQuery;
 use yii\filters\AccessControl;
 use yii\web\Controller;
 use yii\web\ForbiddenHttpException;
@@ -67,15 +68,34 @@ class MainController extends Controller
     public function performAjaxValidation($model) {
     }
 
+    public function modelQuery($model_class,$id = null) {
+        /**
+         * @var MainActiveRecord|string $model_class
+         */
+        $query = $model_class::find();
+        if($id) {
+            $query->andWhere(['id'=>$id]);
+        }
+        return $query;
+    }
+
 
     /**
      * @param string|MainActiveRecord $model_class
      * @param $id
+     * @param null $query
+     * @return MainActiveRecord
      * @throws NotFoundHttpException
-     * @return MainActiveRecord $model
      */
-    public function findModel($model_class, $id) {
-        if(($model = $model_class::findOne($id)) !== null) {
+    public function findModel($model_class, $id, ActiveQuery $query = null) {
+        if(!$query instanceof ActiveQuery) {
+            $model = $this->modelQuery($model_class,$id)->one();
+        }
+        else {
+            $model = $query->one();
+        }
+
+        if($model !== null) {
             return $model;
         }
         else {
