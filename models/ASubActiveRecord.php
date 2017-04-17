@@ -11,11 +11,23 @@ use ReflectionClass;
  */
 abstract class ASubActiveRecord extends MainActiveRecord
 {
+    const ALL = 'all';
+
 
     abstract public function getMainModelClass();
 
 
     abstract public function getMainModelAttribute();
+
+
+    public function getMainModelBindingAttribute() {
+        return 'id';
+    }
+
+
+    public function getSelfBindingAttribute() {
+        return 'id';
+    }
 
 
     public function setChangedAttributes($attributes) {
@@ -28,23 +40,27 @@ abstract class ASubActiveRecord extends MainActiveRecord
         $main_class = $this->getMainModelClass();
         $main_attribute = $this->getMainModelAttribute();
         if(!$this->$main_attribute instanceof $main_class) {
-            $this->$main_attribute = $main_class::findOne(['id' => $this->id]);
+            $this->$main_attribute =
+                $main_class::findOne([$this->getMainModelBindingAttribute() => $this->getSelfBindingAttribute()]);
             if(!$this->$main_attribute instanceof $main_class) {
                 $this->$main_attribute = new $main_class();
             }
         }
-        if($this->tableName() !== $this->$main_attribute->tableName()) {
-            $this->$main_attribute->attributes = $this->getAttributes();
-            $saved = $this->$main_attribute->save();
-            $this->changedAttributes = $this->$main_attribute->changedAttributes;
-            return $saved;
-        }
-        else {
-            $this->$main_attribute->attributes = $this->attributes;
-            $this->changedAttributes = $this->$main_attribute->changedAttributes;
-            return false;
-        }
+//        if($this->tableName() !== $this->$main_attribute->tableName()) {
+        $this->$main_attribute->attributes = $this->getAttributes();
+        $saved = $this->$main_attribute->save();
+        $this->changedAttributes = $this->$main_attribute->changedAttributes;
+        return $saved;
+//        }
+//        else {
+//            $this->$main_attribute->attributes = $this->attributes;
+//            $this->changedAttributes = $this->$main_attribute->changedAttributes;
+//            return false;
+//        }
     }
+
+
+
 
 
     public function getAttributes($names = null, $except = []) {
@@ -69,6 +85,40 @@ abstract class ASubActiveRecord extends MainActiveRecord
     }
 
 
+    public function insertInternal($attributes = null) {
+        $main_class = $this->getMainModelClass();
+        $main_attribute = $this->getMainModelAttribute();
+        $this->saveMainModel();
+        if($this->$main_attribute instanceof $main_class && $this->tableName() == $this->$main_attribute->tableName()) {
+            if(!$this->beforeSave(true)) {
+                return false;
+            }
+            $this->afterSave(true, []);
+            return true;
+        }
+        else {
+            return parent::insertInternal($attributes);
+        }
+    }
+
+
+    public function updateInternal($attributes = null) {
+        $main_class = $this->getMainModelClass();
+        $main_attribute = $this->getMainModelAttribute();
+        $this->saveMainModel();
+        if($this->$main_attribute instanceof $main_class && $this->tableName() == $this->$main_attribute->tableName()) {
+            if(!$this->beforeSave(true)) {
+                return false;
+            }
+            $this->afterSave(true, []);
+            return true;
+        }
+        else {
+            return parent::updateInternal($attributes);
+        }
+    }
+
+
     public function afterFind() {
         parent::afterFind();
         $main_class = $this->getMainModelClass();
@@ -82,7 +132,6 @@ abstract class ASubActiveRecord extends MainActiveRecord
 
     public function beforeSave($insert) {
         if(parent::beforeSave($insert)) {
-            $this->saveMainModel();
             $main_class = $this->getMainModelClass();
             $main_attribute = $this->getMainModelAttribute();
             if($this->$main_attribute instanceof $main_class) {
@@ -92,5 +141,6 @@ abstract class ASubActiveRecord extends MainActiveRecord
         }
         else return false;
     }
+
 
 }

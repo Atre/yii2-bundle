@@ -11,6 +11,30 @@ use yii\db\mysql\Schema;
  */
 class Migration extends \yii\db\Migration
 {
+    public $dbOptions;
+    public $tableName = 'air_rates';
+    public function init()
+    {
+        parent::init();
+
+        $this->dbOptions = $this->generateDbOptions();
+    }
+
+    public function generateDbOptions()
+    {
+        $list = self::getDbOptionsList();
+        $driverName = $this->db->driverName;
+
+        return isset($list[$driverName]) ? $list[$driverName] : null;
+    }
+
+    public static function getDbOptionsList()
+    {
+        return [
+            'mysql' => 'CHARACTER SET utf8 COLLATE utf8_general_ci ENGINE=InnoDB',
+        ];
+    }
+
     public function tinyint() {
         return $this->getDb()->getSchema()->createColumnSchemaBuilder(Schema::TYPE_BOOLEAN, 4);
     }

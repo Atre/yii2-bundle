@@ -1,7 +1,9 @@
 <?php
 namespace dezmont765\yii2bundle\controllers;
+
 use dezmont765\yii2bundle\filters\LayoutFilter;
 use dezmont765\yii2bundle\models\MainActiveRecord;
+use dezmont765\yii2bundle\widgets\PartialActiveForm;
 use Yii;
 use yii\bootstrap\ActiveForm;
 use yii\db\ActiveQuery;
@@ -31,9 +33,9 @@ class MainController extends Controller
             self::ACCESS_FILTER => [
                 'class' => AccessControl::className(),
             ],
-//            self::PAGE_SAVER_FILTER => [
-//                'class' => PageSaver::className(),
-//            ]
+            //            self::PAGE_SAVER_FILTER => [
+            //                'class' => PageSaver::className(),
+            //            ]
         ];
     }
 
@@ -68,13 +70,14 @@ class MainController extends Controller
     public function performAjaxValidation($model) {
     }
 
-    public function modelQuery($model_class,$id = null) {
+
+    public function modelQuery($model_class, $id = null) {
         /**
          * @var MainActiveRecord|string $model_class
          */
         $query = $model_class::find();
         if($id) {
-            $query->andWhere(['id'=>$id]);
+            $query->andWhere(['id' => $id]);
         }
         return $query;
     }
@@ -89,12 +92,11 @@ class MainController extends Controller
      */
     public function findModel($model_class, $id, ActiveQuery $query = null) {
         if(!$query instanceof ActiveQuery) {
-            $model = $this->modelQuery($model_class,$id)->one();
+            $model = $this->modelQuery($model_class, $id)->one();
         }
         else {
             $model = $query->one();
         }
-
         if($model !== null) {
             return $model;
         }
@@ -181,16 +183,18 @@ class MainController extends Controller
 
     /**
      * @param MainActiveRecord[] $models
+     * @param $attributes
+     * @param array $models_without_id
      * @return array|null
      */
-    public function ajaxValidationMultiple($models) {
+    public function ajaxValidationMultiple($models,$attributes, $models_without_id = []) {
         $result = null;
         if(Yii::$app->request->isAjax) {
             foreach($models as $model) {
                 $model->load(Yii::$app->request->post());
             }
             Yii::$app->response->format = Response::FORMAT_JSON;
-            $result = ActiveForm::validateMultiple($models);
+            $result = PartialActiveForm::validationMultiple($models,$attributes, $models_without_id);
         }
         return $result;
     }
@@ -215,7 +219,6 @@ class MainController extends Controller
 
     public function getActiveMap() {
         return [
-
         ];
     }
 }
