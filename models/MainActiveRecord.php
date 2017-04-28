@@ -5,6 +5,7 @@
  * Date: 12.04.2015
  * Time: 17:42
  */
+
 namespace dezmont765\yii2bundle\models;
 
 use DateTime;
@@ -81,9 +82,14 @@ class MainActiveRecord extends ActiveRecord
     }
 
 
-    public function searchByAttribute($attribute, $value, array $additional_criteria = []) {
+    public function searchByAttribute($attribute, $value, $is_strict = true, array $additional_criteria = []) {
         $query = self::find();
-        $query->filterWhere(['like', $attribute, $value]);
+        if($is_strict) {
+            $query->filterWhere([$attribute => $value]);
+        }
+        else {
+            $query->filterWhere(['like', $attribute, $value]);
+        }
         if(count($additional_criteria)) {
             foreach($additional_criteria as $criteria) {
                 $query->andFilterWhere($criteria);
@@ -178,8 +184,6 @@ class MainActiveRecord extends ActiveRecord
         }
         return $this->is_saved;
     }
-
-
 
 
     public static function convertDate($model, $attribute, $current_format, $desired_format) {

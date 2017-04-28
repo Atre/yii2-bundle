@@ -1,4 +1,5 @@
 <?php
+
 namespace dezmont765\yii2bundle\actions;
 
 use dezmont765\yii2bundle\models\MainActiveRecord;
@@ -23,14 +24,13 @@ class SelectionListAction extends SelectionAction
         $value = Yii::$app->request->getQueryParam($this->query_param);
         $model_class = $this->getModelClass();
         $model = new $model_class;
-        $models = $model->searchByAttribute($this->attribute, $value);
+        $models = $model->searchByAttribute($this->attribute, $value, false);
         $model_array = [];
         foreach($models as $model) {
             $model_array[] = $this->getItem($model);
         }
         return ['more' => false, 'results' => $model_array];
     }
-
 
 
 }
