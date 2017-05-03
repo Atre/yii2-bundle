@@ -17,7 +17,9 @@ abstract class ASubActiveRecord extends MainActiveRecord
     abstract public function getMainModelClass();
 
 
-    abstract public function getMainModelAttribute();
+    static public function getMainModelAttribute() {
+        return '';
+    }
 
 
     public function getMainModelBindingAttribute() {

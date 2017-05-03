@@ -1,4 +1,5 @@
 <?php
+
 namespace dezmont765\yii2bundle\controllers;
 
 use dezmont765\yii2bundle\filters\LayoutFilter;
@@ -7,6 +8,7 @@ use dezmont765\yii2bundle\widgets\PartialActiveForm;
 use Yii;
 use yii\bootstrap\ActiveForm;
 use yii\db\ActiveQuery;
+use yii\db\ActiveRecord;
 use yii\filters\AccessControl;
 use yii\web\Controller;
 use yii\web\ForbiddenHttpException;
@@ -86,23 +88,22 @@ class MainController extends Controller
     /**
      * @param string|MainActiveRecord $model_class
      * @param $id
-     * @param null $query
+     * @param null|ActiveQuery $query
+     * @param bool $is_safe
      * @return MainActiveRecord
      * @throws NotFoundHttpException
      */
-    public function findModel($model_class, $id, ActiveQuery $query = null) {
+    public function findModel($model_class, $id, ActiveQuery $query = null, $is_safe = true) {
         if(!$query instanceof ActiveQuery) {
             $model = $this->modelQuery($model_class, $id)->one();
         }
         else {
             $model = $query->one();
         }
-        if($model !== null) {
-            return $model;
-        }
-        else {
+        if(!$model instanceof $model_class && $is_safe) {
             throw new NotFoundHttpException(Yii::t('messages', 'The requested page does not exist.'));
         }
+        else return $model;
     }
 
 
@@ -187,14 +188,14 @@ class MainController extends Controller
      * @param array $models_without_id
      * @return array|null
      */
-    public function ajaxValidationMultiple($models,$attributes, $models_without_id = []) {
+    public function ajaxValidationMultiple($models, $attributes, $models_without_id = []) {
         $result = null;
         if(Yii::$app->request->isAjax) {
             foreach($models as $model) {
                 $model->load(Yii::$app->request->post());
             }
             Yii::$app->response->format = Response::FORMAT_JSON;
-            $result = PartialActiveForm::validationMultiple($models,$attributes, $models_without_id);
+            $result = PartialActiveForm::validationMultiple($models, $attributes, $models_without_id);
         }
         return $result;
     }
