@@ -7,7 +7,7 @@ namespace dezmont765\yii2bundle\actions;
  * Date: 30.04.2017
  * Time: 21:22
  */
-class UpdateWithDynamicChildrenAction extends DynamicFieldsAction
+class UpdateWithDynamicChildrenAction extends MultipleDynamicFieldsAction
 {
 
 
@@ -21,7 +21,11 @@ class UpdateWithDynamicChildrenAction extends DynamicFieldsAction
         parent::run($id);
         $this->findModels();
         $this->initModels();
-        $result = $this->controller->ajaxValidationMultiple(array_merge($this->sub_models, [$this->model]), null,
+        $models = [$this->model];
+        foreach($this->fields as $field) {
+            $models = array_merge($models, $field[self::SUB_MODELS]);
+        }
+        $result = $this->controller->ajaxValidationMultiple($models, null,
                                                             [$this->model_class]);
         if($result !== null) {
             return $result;

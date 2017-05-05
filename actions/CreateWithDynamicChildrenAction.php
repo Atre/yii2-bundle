@@ -10,7 +10,7 @@ use dezmont765\yii2bundle\actions\DynamicFieldsAction;
  * Date: 30.04.2017
  * Time: 15:57
  */
-class CreateWithDynamicChildrenAction extends DynamicFieldsAction
+class CreateWithDynamicChildrenAction extends MultipleDynamicFieldsAction
 {
 
     public function getModel($id = null) {
@@ -23,7 +23,11 @@ class CreateWithDynamicChildrenAction extends DynamicFieldsAction
     public function run($id = null) {
         parent::run($id);
         $this->initModels();
-        $result = $this->controller->ajaxValidationMultiple(array_merge($this->sub_models, [$this->model]), null,
+        $models = [$this->model];
+        foreach($this->fields as $field) {
+            $models = array_merge($models, $field[self::SUB_MODELS]);
+        }
+        $result = $this->controller->ajaxValidationMultiple($models, null,
                                                             [$this->model_class]);
         if($result !== null) {
             return $result;

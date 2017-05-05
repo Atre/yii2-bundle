@@ -1,4 +1,5 @@
 <?php
+
 namespace dezmont765\yii2bundle\models;
 /**
  * Created by PhpStorm.
@@ -89,5 +90,10 @@ abstract class AParentActiveRecord extends MainActiveRecord
 
     public static function subTablesRelationFields() {
         return [];
+    }
+
+
+    public static function subTableBaseView() {
+        return '';
     }
 }

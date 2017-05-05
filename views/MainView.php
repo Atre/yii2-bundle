@@ -5,6 +5,7 @@
  * Date: 28.02.2015
  * Time: 23:07
  */
+
 namespace dezmont765\yii2bundle\views;
 
 use yii\helpers\ArrayHelper;
@@ -39,25 +40,38 @@ class MainView extends View
     }
 
 
+    public function filterJsContainer(&$container, $temp_storage_name) {
+        $temp_version = \Yii::$app->session->get($temp_storage_name);
+        if(is_array($container)) {
+            foreach($container as $position => &$jsFile) {
+                $jsFile = array_filter($jsFile, function ($key) use ($temp_version, $position) {
+                    if(isset($temp_version[$position][$key])) {
+                        return false;
+                    }
+                    else return true;
+                }, ARRAY_FILTER_USE_KEY);
+            }
+            if(!empty($container)) {
+                foreach($container as $position => $scripts) {
+                    if(!empty($scripts)) {
+                        if(!isset($temp_version[$position]) || !is_array($temp_version[$position])) {
+                            $temp_version[$position] = [];
+                        }
+                        $temp_version[$position] = array_merge($temp_version[$position], $scripts);
+                    }
+                }
+                \Yii::$app->session->set($temp_storage_name, $temp_version);
+            }
+        }
+    }
+
+
     public function endPage($ajaxMode = false) {
         $content = ob_get_clean();
         if($ajaxMode) {
-            $cached_js_files = \Yii::$app->cache->get('jsFiles');
-            $cached_css_files = \Yii::$app->cache->get('cssFiles');
-            if(is_array($this->jsFiles)) {
-                foreach($this->jsFiles as $position => &$jsFile) {
-                    $jsFile = array_filter($jsFile, function ($key) use ($cached_js_files, $position) {
-                        if(isset($cached_js_files[$position][$key])) {
-                            return false;
-                        }
-                        else return true;
-                    }, ARRAY_FILTER_USE_KEY);
-                }
-                if(!empty($this->jsFiles)) {
-                    $cached_js_files = ArrayHelper::merge($cached_js_files, $this->jsFiles);
-                    \Yii::$app->cache->set('jsFiles', $cached_js_files);
-                }
-            }
+            $this->filterJsContainer($this->jsFiles, 'jsFiles');
+//            $this->filterJsContainer($this->js, 'js');
+            $cached_css_files = \Yii::$app->session->get('cssFiles');
             if(is_array($this->cssFiles)) {
                 $this->cssFiles = array_filter($this->cssFiles, function ($key) use ($cached_css_files) {
                     if(isset($cached_css_files[$key])) {
@@ -67,21 +81,20 @@ class MainView extends View
                 }, ARRAY_FILTER_USE_KEY);
                 if(!empty($this->cssFiles)) {
                     $cached_css_files = ArrayHelper::merge($cached_css_files, $this->cssFiles);
-                    \Yii::$app->cache->set('cssFiles', $cached_css_files);
+                    \Yii::$app->session->set('cssFiles', $cached_css_files);
                 }
             }
         }
         else {
-            \Yii::$app->cache->set('jsFiles', $this->jsFiles);
-            \Yii::$app->cache->set('cssFiles', $this->cssFiles);
+            \Yii::$app->session->set('jsFiles', $this->jsFiles);
+            \Yii::$app->session->set('cssFiles', $this->cssFiles);
+            \Yii::$app->session->set('js', $this->js);
         }
         echo strtr($content, [
             self::PH_HEAD => $this->renderHeadHtml(),
             self::PH_BODY_BEGIN => $this->renderBodyBeginHtml(),
             self::PH_BODY_END => $this->renderBodyEndHtml($ajaxMode),
         ]);
-
         $this->clear();
     }
-
 }
