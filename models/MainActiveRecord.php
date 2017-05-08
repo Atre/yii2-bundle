@@ -253,5 +253,7 @@ class MainActiveRecord extends ActiveRecord
         return $models;
     }
 
+    public function ajaxValidate($key = null) {
 
+    }
 }

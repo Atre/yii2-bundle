@@ -5,6 +5,7 @@ namespace dezmont765\yii2bundle\actions;
 use dezmont765\yii2bundle\models\AParentActiveRecord;
 use dezmont765\yii2bundle\models\ASubActiveRecord;
 use dezmont765\yii2bundle\models\MainActiveRecord;
+use dezmont765\yii2bundle\widgets\PartialActiveForm;
 use Yii;
 
 /**
@@ -22,15 +23,24 @@ abstract class DynamicFieldsAction extends MainAction
     const SUB_MODEL_CLASS = 'sub_model_class';
     const CHILD_BINDING_ATTRIBUTE = 'child_binding_attribute';
     const PARENT_BINDING_ATTRIBUTE = 'parent_binding_attribute';
+    const CATEGORY_GET_STRATEGY = 'category_get_strategy';
+    const CATEGORY_POST_PARAM = 'category_post_param';
 
     public $model = null;
 
+    public function getCategory($set_category_strategy, $category) {
+        if(is_callable($set_category_strategy)) {
+            return call_user_func_array($set_category_strategy, [$category]);
+        }
+        else return $category;
+    }
 
     abstract public function getModel($id);
 
 
     public function run($id = null) {
         $this->model = $this->getModel($id);
+        $this->model->load(Yii::$app->request->post());
     }
 
 
@@ -126,6 +136,7 @@ abstract class DynamicFieldsAction extends MainAction
         }
         return $sub_models;
     }
+
 
 
     abstract public function findExistingSubModels();

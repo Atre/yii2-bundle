@@ -29,6 +29,7 @@ abstract class MultipleDynamicFieldsAction extends DynamicFieldsAction
             self::BINDING_CLASS => null,
             self::SUB_MODELS => [],
             self::SUB_MODEL_CLASS => null,
+            self::CATEGORY_POST_PARAM => 'category',
         ];
     }
 
@@ -40,8 +41,10 @@ abstract class MultipleDynamicFieldsAction extends DynamicFieldsAction
              * @var $key MainActiveRecord
              */
             $post = Yii::$app->request->getBodyParam($key::_formName());
+            $category = $post[$fields[self::CATEGORY_POST_PARAM]];
             $fields = ArrayHelper::merge($this->initialValues(), $fields);
-            $fields[self::CATEGORY] = isset($post['category']) ? $post['category'] : null;
+            $fields[self::CATEGORY] =
+                $this->getCategory($fields[self::CATEGORY_GET_STRATEGY], $category);
             if($fields[self::CATEGORY]) {
                 $fields[self::SUB_MODEL_CLASS] =
                     $this->getSubModelClass($fields[self::SUB_MODEL_CLASS], $fields[self::CATEGORY],

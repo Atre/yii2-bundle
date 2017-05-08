@@ -1,6 +1,8 @@
 <?php
+
 namespace dezmont765\yii2bundle\widgets;
 
+use dezmont765\yii2bundle\models\MainActiveRecord;
 use Yii;
 use yii\base\Model;
 use yii\bootstrap\ActiveForm;
@@ -35,28 +37,31 @@ class PartialActiveForm extends ActiveForm
     }
 
 
-    public static function validationMultiple($models, $attributes = null, array $model_without_id = []) {
-        $result = [];
-        $model_without_id = array_flip($model_without_id);
+    public static function ajaxValidationMultiple(&$result, $models, $attributes = null) {
         /* @var $model Model */
-        foreach($models as $i => $model) {
-            $model->validate($attributes);
-            foreach($model->getErrors() as $attribute => $errors) {
-                if(isset($model_without_id[$model->className()])) {
-                    $result[Html::getInputId($model, $attribute)] = $errors;
-                }
-                else {
-                    if($model->isNewRecord) {
-                        $id = $i;
-                    }
-                    else {
-                        $id = $model->id;
-                    }
-                    $result[Html::getInputId($model, "[$id]" . $attribute)] = $errors;
-                }
-            }
+        foreach($models as $key => $model) {
+            self::ajaxValidation($result, $model, $attributes, $key);
         }
         return $result;
+    }
+
+
+    /**
+     * @param $result
+     * @param Model $model
+     * @param $attributes
+     * @param bool $key
+     */
+    public static function ajaxValidation(&$result, $model, $attributes = null, $key = null) {
+        $model->validate($attributes);
+        foreach($model->getErrors() as $attribute => $errors) {
+            if($key !== null) {
+                $result[Html::getInputId($model, "[$key]" . $attribute)] = $errors;
+            }
+            else {
+                $result[Html::getInputId($model, $attribute)] = $errors;
+            }
+        }
     }
 
 }
