@@ -18,28 +18,10 @@ use yii\helpers\ArrayHelper;
  * @property ASubActiveRecord $sub_model_class
  * @property ActiveRecord $model
  */
-abstract class MultipleDynamicFieldsAction extends MainAction
+abstract class MultipleDynamicFieldsAction extends DynamicFieldsAction
 {
 
-    const SUB_MODELS = 'sub_models';
-    const CATEGORY = 'category';
     public $fields = [];
-
-    public $category = null;
-    public $sub_model_class = null;
-
-
-    const SUB_MODEL_PARENT_CLASS = 'sub_model_parent_class';
-    const BINDING_CLASS = 'binding_class';
-    const SUB_MODEL_CLASS = 'sub_model_class';
-    const CHILD_BINDING_ATTRIBUTE = 'child_binding_attribute';
-    const PARENT_BINDING_ATTRIBUTE = 'parent_binding_attribute';
-
-    public $binding_class = null;
-    public $sub_model_parent_class = null;
-    public $child_binding_attribute = null;
-    public $parent_binding_attribute = null;
-    public $model = null;
 
 
     public function initialValues() {
@@ -69,48 +51,9 @@ abstract class MultipleDynamicFieldsAction extends MainAction
     }
 
 
-    public function getSubModelClass($sub_model_class, $category, $sub_model_parent_class) {
-        /**
-         * @var $sub_model_parent_class AParentActiveRecord
-         */
-        $sub_model_class =
-            $sub_model_class ?? $sub_model_parent_class::getSubTableClassByCategory($category);
-        return $sub_model_class;
-    }
-
-
-    public function getDefaultView() {
-        return $this->controller->id . '-form';
-    }
-
-
-    public function run($id = null) {
-        $this->model = $this->getModel($id);
-    }
-
-
-    abstract public function getModel($id);
-
-
     public function initModels() {
         foreach($this->fields as &$fields) {
-            if($fields[self::SUB_MODEL_CLASS] !== null) {
-                $this->loadModelsFromRequest($fields[self::SUB_MODELS], $fields[self::SUB_MODEL_CLASS]);
-            }
-        }
-    }
-
-
-    public function loadModelsFromRequest(&$sub_models = [], $sub_model_class) {
-        $sub_model_attribute_sets = Yii::$app->request->post($sub_model_class::_formName(), []);
-        foreach($sub_model_attribute_sets as $key => $sub_model_attribute_set) {
-            if(!isset($sub_models[$key]) || !$sub_models[$key] instanceof $sub_model_class) {
-                $sub_models[$key] = new $sub_model_class;
-            }
-            $sub_models[$key]->attributes = $sub_model_attribute_set;
-        }
-        if(empty($sub_models)) {
-            $sub_models[] = new $sub_model_class;
+            $this->loadModelsFromRequest($fields[self::SUB_MODELS], $fields[self::SUB_MODEL_CLASS]);
         }
     }
 
@@ -119,12 +62,11 @@ abstract class MultipleDynamicFieldsAction extends MainAction
         if($this->model->load(Yii::$app->request->post())) {
             if($this->model->save()) {
                 foreach($this->fields as &$field) {
-                    foreach($field[self::SUB_MODELS] as &$sub_model) {
-                        $sub_model->{$field[self::CHILD_BINDING_ATTRIBUTE]} =
-                            $this->model->{$field[self::PARENT_BINDING_ATTRIBUTE]};
-                        $sub_model->category = $field[self::CATEGORY];
-                        $sub_model->save();
-                    }
+                    $this->saveSubModels($field[self::SUB_MODELS],
+                                         $field[self::CATEGORY],
+                                         $field[self::CHILD_BINDING_ATTRIBUTE],
+                                         $field[self::PARENT_BINDING_ATTRIBUTE]
+                    );
                 }
                 return $this->controller->redirect(['update', 'id' => $this->model->id]);
             }
@@ -132,42 +74,17 @@ abstract class MultipleDynamicFieldsAction extends MainAction
     }
 
 
-    public function getBindingClass($binding_class, $sub_model_parent_class) {
-        return $binding_class ?? $sub_model_parent_class;
-    }
-
-
-    public function findModels() {
+    public function findExistingSubModels() {
         foreach($this->fields as &$field) {
-            if($field[self::SUB_MODEL_CLASS] !== null) {
-                $sub_model_class = $field[self::SUB_MODEL_CLASS];
-                $sub_model_parent_class = $field[self::SUB_MODEL_PARENT_CLASS];
-                $category = $field[self::CATEGORY];
-                $boundary_attribute_value = $this->model->{$field[self::PARENT_BINDING_ATTRIBUTE]};
-                if($sub_model_class::tableName() !== $sub_model_parent_class::tableName()) {
-                    $binding_class = $this->getBindingClass($field[self::BINDING_CLASS], $sub_model_parent_class);
-                    $field[self::SUB_MODELS] = $sub_model_class::find()
-                                                               ->joinWith($sub_model_class::getMainModelAttribute())
-                                                               ->andWhere([$binding_class::tableName() . '.' .
-                                                                           $field[self::CHILD_BINDING_ATTRIBUTE] => $boundary_attribute_value])
-                                                               ->andWhere(['category' => $category])
-                                                               ->indexBy('id')
-                                                               ->all();
-                }
-                else {
-                    $field[self::SUB_MODELS] =
-                        $sub_model_class::find()->where(['AND',
-                                                         [$field[self::CHILD_BINDING_ATTRIBUTE] => $boundary_attribute_value],
-                                                         ['category' => $category]])
-                                        ->indexBy('id')
-                                        ->all();
-                }
-            }
+            $field[self::SUB_MODELS] = $this->findSubModels($field[self::SUB_MODEL_CLASS],
+                                                            $field[self::SUB_MODEL_PARENT_CLASS],
+                                                            $field[self::CATEGORY],
+                                                            $field[self::BINDING_CLASS],
+                                                            $field[self::CHILD_BINDING_ATTRIBUTE],
+                                                            $field[self::PARENT_BINDING_ATTRIBUTE]
+            );
         }
     }
 
 
-    protected function transformSubModels() {
-        return true;
-    }
 }

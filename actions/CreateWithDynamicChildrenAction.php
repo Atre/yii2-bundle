@@ -2,7 +2,7 @@
 
 namespace dezmont765\yii2bundle\actions;
 
-use dezmont765\yii2bundle\actions\DynamicFieldsAction;
+use dezmont765\yii2bundle\actions\SingleDynamicFieldsAction;
 
 /**
  * Created by PhpStorm.

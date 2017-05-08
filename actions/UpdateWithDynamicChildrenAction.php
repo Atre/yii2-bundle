@@ -19,7 +19,7 @@ class UpdateWithDynamicChildrenAction extends MultipleDynamicFieldsAction
 
     public function run($id = null) {
         parent::run($id);
-        $this->findModels();
+        $this->findExistingSubModels();
         $this->initModels();
         $models = [$this->model];
         foreach($this->fields as $field) {

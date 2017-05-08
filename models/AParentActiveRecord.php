@@ -8,19 +8,8 @@ namespace dezmont765\yii2bundle\models;
  * Time: 17:00
  * @property $category
  */
-abstract class AParentActiveRecord extends MainActiveRecord
+abstract class AParentActiveRecord extends MainActiveRecord implements IParentActiveRecord
 {
-    abstract public function getSubTableParentClass();
-
-
-    static public function basicSubTableClass() {
-        return null;
-    }
-
-
-    static public function basicSubTableView() {
-        return null;
-    }
 
 
     private $sub_table_relation = null;
@@ -78,22 +67,5 @@ abstract class AParentActiveRecord extends MainActiveRecord
     }
 
 
-    public static function subTablesClasses() {
-        return [];
-    }
 
-
-    public static function subTableViews() {
-        return [];
-    }
-
-
-    public static function subTablesRelationFields() {
-        return [];
-    }
-
-
-    public static function subTableBaseView() {
-        return '';
-    }
 }

@@ -4,7 +4,7 @@ namespace dezmont765\yii2bundle\actions;
 
 use dezmont765\yii2bundle\widgets\PartialActiveForm;
 
-class ReplaceDynamicFieldsAction extends LoadDynamicFieldsAction
+class ReplaceDynamicFieldsAction extends LoadSingleDynamicFieldsAction
 {
     private $key = null;
 
@@ -21,6 +21,14 @@ class ReplaceDynamicFieldsAction extends LoadDynamicFieldsAction
             $this->loadModelsFromRequest($this->sub_models, $sub_model_class);
             $this->sub_models = [$this->key => $this->sub_models[$this->key]];
         }
+    }
+
+
+    public function run($id = null) {
+        $this->model = $this->getModel($id);
+//        $this->findModels();
+        $this->initModels();
+        return $this->render();
     }
 
 

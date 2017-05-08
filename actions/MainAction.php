@@ -1,4 +1,5 @@
 <?php
+
 namespace dezmont765\yii2bundle\actions;
 
 use dezmont765\yii2bundle\controllers\MainController;
@@ -16,6 +17,7 @@ use yii\widgets\ActiveForm;
  */
 class MainAction extends Action
 {
+    const MODEL_CLASS = 'model_class';
     public $success_message = null;
     public $error_message = null;
     public $model_class = null;
@@ -34,7 +36,6 @@ class MainAction extends Action
             Yii::$app->response->format = Response::FORMAT_JSON;
             $result = ActiveForm::validate($model);
         }
-
         return $result;
     }
 

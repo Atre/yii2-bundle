@@ -1,4 +1,5 @@
 <?php
+
 namespace dezmont765\yii2bundle\models;
 
 use ReflectionClass;
@@ -9,17 +10,8 @@ use ReflectionClass;
  * Date: 12.05.2016
  * Time: 11:07
  */
-abstract class ASubActiveRecord extends MainActiveRecord
+abstract class ASubActiveRecord extends MainActiveRecord implements ISubActiveRecord
 {
-    const ALL = 'all';
-
-
-    abstract public function getMainModelClass();
-
-
-    static public function getMainModelAttribute() {
-        return '';
-    }
 
 
     public function getMainModelBindingAttribute() {
@@ -60,9 +52,6 @@ abstract class ASubActiveRecord extends MainActiveRecord
 //            return false;
 //        }
     }
-
-
-
 
 
     public function getAttributes($names = null, $except = []) {
@@ -112,7 +101,7 @@ abstract class ASubActiveRecord extends MainActiveRecord
             if(!$this->beforeSave(true)) {
                 return false;
             }
-            $this->afterSave(true, []);
+            $this->afterSave(false, []);
             return true;
         }
         else {
