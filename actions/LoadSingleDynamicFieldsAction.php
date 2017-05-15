@@ -4,7 +4,7 @@ namespace dezmont765\yii2bundle\actions;
 
 use dezmont765\yii2bundle\widgets\PartialActiveForm;
 
-class LoadSingleDynamicFieldsAction extends SingleDynamicFieldsAction
+class LoadSingleDynamicFieldsAction extends MultipleDynamicFieldsAction
 {
 
     public function getModel($id = null) {
@@ -26,12 +26,15 @@ class LoadSingleDynamicFieldsAction extends SingleDynamicFieldsAction
 
 
     public function render() {
-        $child_models_parent_class = $this->child_models_parent_class;
-        $fields_html =
-            $this->controller->renderAjax($child_models_parent_class::subTablesBaseView(), [
-                'view' => $child_models_parent_class::getSubTableViewByCategory($this->category),
-                'models' => $this->child_models,
-            ]);
+        $fields_html = '';
+        foreach($this->fields as $field) {
+            $child_models_parent_class = $field->child_models_parent_class;
+            $fields_html .=
+                $this->controller->renderAjax($child_models_parent_class::subTablesBaseView(), [
+                    'view' => $child_models_parent_class::getSubTableViewByCategory($field->category),
+                    'models' => $field->child_models,
+                ]);
+        }
         return $this->controller->asJson(['html' => $fields_html,
                                           'fields' => PartialActiveForm::getAttributes()]);
     }

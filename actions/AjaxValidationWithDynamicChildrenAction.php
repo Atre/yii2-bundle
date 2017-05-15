@@ -35,7 +35,7 @@ class AjaxValidationWithDynamicChildrenAction extends MultipleDynamicFieldsActio
             $result = [];
             PartialActiveForm::ajaxValidation($result, $this->model);
             foreach($this->fields as $field) {
-                PartialActiveForm::ajaxValidationMultiple($result, $field[self::CHILD_MODELS]);
+                PartialActiveForm::ajaxValidationMultiple($result, $field->child_models);
             }
             return $result;
         }
