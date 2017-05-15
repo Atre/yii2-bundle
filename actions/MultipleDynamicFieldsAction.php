@@ -27,9 +27,10 @@ abstract class MultipleDynamicFieldsAction extends DynamicFieldsAction
     public function initialValues() {
         return [
             self::BINDING_CLASS => null,
-            self::SUB_MODELS => [],
-            self::SUB_MODEL_CLASS => null,
+            self::CHILD_MODELS => [],
+            self::CHILD_MODELS_SUB_CLASS => null,
             self::CATEGORY_POST_PARAM => 'category',
+            self::CATEGORY_GET_STRATEGY => null,
         ];
     }
 
@@ -41,14 +42,14 @@ abstract class MultipleDynamicFieldsAction extends DynamicFieldsAction
              * @var $key MainActiveRecord
              */
             $post = Yii::$app->request->getBodyParam($key::_formName());
-            $category = $post[$fields[self::CATEGORY_POST_PARAM]];
             $fields = ArrayHelper::merge($this->initialValues(), $fields);
+            $category = $post[$fields[self::CATEGORY_POST_PARAM]];
             $fields[self::CATEGORY] =
                 $this->getCategory($fields[self::CATEGORY_GET_STRATEGY], $category);
             if($fields[self::CATEGORY]) {
-                $fields[self::SUB_MODEL_CLASS] =
-                    $this->getSubModelClass($fields[self::SUB_MODEL_CLASS], $fields[self::CATEGORY],
-                                            $fields[self::SUB_MODEL_PARENT_CLASS]);
+                $fields[self::CHILD_MODELS_SUB_CLASS] =
+                    $this->getChildModelsSubClass($fields[self::CHILD_MODELS_SUB_CLASS], $fields[self::CATEGORY],
+                                            $fields[self::CHILD_MODELS_PARENT_CLASS]);
             }
         }
     }
@@ -56,7 +57,7 @@ abstract class MultipleDynamicFieldsAction extends DynamicFieldsAction
 
     public function initModels() {
         foreach($this->fields as &$fields) {
-            $this->loadModelsFromRequest($fields[self::SUB_MODELS], $fields[self::SUB_MODEL_CLASS]);
+            $this->loadModelsFromRequest($fields[self::CHILD_MODELS], $fields[self::CHILD_MODELS_SUB_CLASS]);
         }
     }
 
@@ -65,7 +66,7 @@ abstract class MultipleDynamicFieldsAction extends DynamicFieldsAction
         if($this->model->load(Yii::$app->request->post())) {
             if($this->model->save()) {
                 foreach($this->fields as &$field) {
-                    $this->saveSubModels($field[self::SUB_MODELS],
+                    $this->saveSubModels($field[self::CHILD_MODELS],
                                          $field[self::CATEGORY],
                                          $field[self::CHILD_BINDING_ATTRIBUTE],
                                          $field[self::PARENT_BINDING_ATTRIBUTE]
@@ -78,14 +79,17 @@ abstract class MultipleDynamicFieldsAction extends DynamicFieldsAction
 
 
     public function findExistingSubModels() {
-        foreach($this->fields as &$field) {
-            $field[self::SUB_MODELS] = $this->findSubModels($field[self::SUB_MODEL_CLASS],
-                                                            $field[self::SUB_MODEL_PARENT_CLASS],
-                                                            $field[self::CATEGORY],
-                                                            $field[self::BINDING_CLASS],
-                                                            $field[self::CHILD_BINDING_ATTRIBUTE],
-                                                            $field[self::PARENT_BINDING_ATTRIBUTE]
-            );
+        if(!$this->model->isNewRecord) {
+            foreach($this->fields as &$field) {
+                $field[self::CHILD_MODELS] = $this->findChildModels(
+                                                                $field[self::CHILD_MODELS_SEARCH_STRATEGY],
+                                                                $field[self::CHILD_MODELS_SUB_CLASS],
+                                                                $field[self::CHILD_MODELS_PARENT_CLASS],
+                                                                $field[self::CATEGORY],
+                                                                $field[self::CHILD_BINDING_ATTRIBUTE],
+                                                                       $field[self::PARENT_BINDING_ATTRIBUTE]
+                );
+            }
         }
     }
 

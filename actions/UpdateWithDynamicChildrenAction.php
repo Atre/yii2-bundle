@@ -2,6 +2,8 @@
 
 namespace dezmont765\yii2bundle\actions;
 use dezmont765\yii2bundle\widgets\PartialActiveForm;
+use yii\web\HttpException;
+use yii\web\MethodNotAllowedHttpException;
 use yii\web\Response;
 
 /**
@@ -24,15 +26,6 @@ class UpdateWithDynamicChildrenAction extends MultipleDynamicFieldsAction
         parent::run($id);
         $this->findExistingSubModels();
         $this->initModels();
-        if(\Yii::$app->request->isAjax) {
-            $result = [];
-            PartialActiveForm::ajaxValidation($result, $this->model);
-            foreach($this->fields as $field) {
-                PartialActiveForm::ajaxValidationMultiple($result, $field[self::SUB_MODELS]);
-            }
-            \Yii::$app->response->format = Response::FORMAT_JSON;
-            return $result;
-        }
         $this->save();
         return $this->controller->render($this->getView(), ['model' => $this->model]);
     }

@@ -23,11 +23,8 @@ abstract class AParentActiveRecord extends MainActiveRecord implements IParentAc
         if($this->sub_table_relation instanceof $parent_class) {
             return $this->sub_table_relation;
         }
-        $sub_table_relation_fields = static::subTablesRelationFields();
-        if(isset($sub_table_relation_fields[$this->category])) {
-            $sub_table_relation_field = $sub_table_relation_fields[$this->category];
-        }
-        else {
+        $sub_table_relation_field = $this->getSubTableRelationFieldByCategory($this->category);
+        if($sub_table_relation_field === null) {
             return null;
         }
         $this->sub_table_relation = $this->$sub_table_relation_field;
@@ -35,22 +32,37 @@ abstract class AParentActiveRecord extends MainActiveRecord implements IParentAc
     }
 
 
+    public static function getSubTableRelationFieldByCategory($category) {
+        $sub_table_relation_fields = static::subTablesRelationFields();
+        if(isset($sub_table_relation_fields[$category])) {
+            return $sub_table_relation_fields[$category];
+        }
+        else {
+            return null;
+        }
+    }
+
+
+    /**
+     * @param $category
+     * @return ASubActiveRecord|string
+     */
     public static function getSubTableClassByCategory($category) {
         if(isset(static::subTablesClasses()[$category])) {
             return static::subTablesClasses()[$category];
         }
         else {
-            $basic_form_class = static::basicSubTableClass();
+            $basic_form_class = static::basicSubTablesClass();
             return $basic_form_class;
         }
     }
 
 
     public static function getSubTableViewByCategory($category) {
-        if(isset(static::subTableViews()[$category])) {
-            return static::subTableViews()[$category];
+        if(isset(static::subTablesViews()[$category])) {
+            return static::subTablesViews()[$category];
         }
-        else return static::basicSubTableView();
+        else return static::basicSubTablesView();
     }
 
 
@@ -66,6 +78,15 @@ abstract class AParentActiveRecord extends MainActiveRecord implements IParentAc
         else return null;
     }
 
+
+    public static function basicSubTablesClass() {
+        return null;
+    }
+
+
+    public static function basicSubTablesView() {
+        return null;
+    }
 
 
 }

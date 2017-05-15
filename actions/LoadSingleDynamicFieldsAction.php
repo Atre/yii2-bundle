@@ -26,11 +26,11 @@ class LoadSingleDynamicFieldsAction extends SingleDynamicFieldsAction
 
 
     public function render() {
-        $sub_model_parent_class = $this->sub_model_parent_class;
+        $child_models_parent_class = $this->child_models_parent_class;
         $fields_html =
-            $this->controller->renderAjax($sub_model_parent_class::subTableBaseView(), [
-                'view' => $sub_model_parent_class::getSubTableViewByCategory($this->category),
-                'models' => $this->sub_models,
+            $this->controller->renderAjax($child_models_parent_class::subTablesBaseView(), [
+                'view' => $child_models_parent_class::getSubTableViewByCategory($this->category),
+                'models' => $this->child_models,
             ]);
         return $this->controller->asJson(['html' => $fields_html,
                                           'fields' => PartialActiveForm::getAttributes()]);

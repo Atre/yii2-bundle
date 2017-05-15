@@ -3,8 +3,6 @@
 namespace dezmont765\yii2bundle\actions;
 
 use dezmont765\yii2bundle\models\AParentActiveRecord;
-use dezmont765\yii2bundle\models\ASubActiveRecord;
-use dezmont765\yii2bundle\models\MainActiveRecord;
 use Yii;
 use yii\db\ActiveRecord;
 
@@ -13,8 +11,7 @@ use yii\db\ActiveRecord;
  * User: Dezmont
  * Date: 30.04.2017
  * Time: 14:47
- * @property AParentActiveRecord $sub_model_parent_class
- * @property ASubActiveRecord $sub_model_class
+ * @property AParentActiveRecord $child_models_parent_class
  * @property ActiveRecord $model
  */
 abstract class SingleDynamicFieldsAction extends DynamicFieldsAction
@@ -22,17 +19,18 @@ abstract class SingleDynamicFieldsAction extends DynamicFieldsAction
 
 
     public $category = null;
-    public $sub_model_class = null;
+    public $child_models_sub_class = null;
 
-    public $sub_models = [];
+    public $child_models = [];
 
 
     public $binding_class = null;
-    public $sub_model_parent_class = null;
+    public $child_models_parent_class = null;
     public $child_binding_attribute = null;
     public $parent_binding_attribute = null;
     public $category_get_strategy = null;
     public $category_post_param = 'category';
+    public $child_models_search_strategy = null;
 
 
     public function init() {
@@ -40,21 +38,21 @@ abstract class SingleDynamicFieldsAction extends DynamicFieldsAction
         $this->category = $this->getCategory($this->category_get_strategy,
                                              Yii::$app->request->getBodyParam($this->category_post_param));;
         if($this->category) {
-            $this->sub_model_class = $this->getSubModelClass($this->sub_model_class, $this->category,
-                                                             $this->sub_model_parent_class);
+            $this->child_models_sub_class = $this->getChildModelsSubClass($this->child_models_sub_class, $this->category,
+                                                                          $this->child_models_parent_class);
         }
     }
 
 
     public function initModels() {
-        $this->loadModelsFromRequest($this->sub_models, $this->sub_model_class);
+        $this->loadModelsFromRequest($this->child_models, $this->child_models_sub_class);
     }
 
 
     public function save() {
         if($this->model->load(Yii::$app->request->post())) {
             if($this->model->save()) {
-                $this->saveSubModels($this->sub_models, $this->category, $this->child_binding_attribute,
+                $this->saveSubModels($this->child_models, $this->category, $this->child_binding_attribute,
                                      $this->parent_binding_attribute);
                 return $this->controller->redirect(['update', 'id' => $this->model->id]);
             }
@@ -68,10 +66,10 @@ abstract class SingleDynamicFieldsAction extends DynamicFieldsAction
 
 
     public function findExistingSubModels() {
-        $this->sub_models =
-            $this->findSubModels($this->sub_model_class, $this->sub_model_parent_class, $this->category,
-                                 $this->binding_class, $this->child_binding_attribute,
-                                 $this->parent_binding_attribute);
+        $this->child_models =
+            $this->findChildModels($this->child_models_search_strategy, $this->child_models_sub_class,
+                                   $this->child_models_parent_class, $this->category, $this->child_binding_attribute,
+                                   $this->parent_binding_attribute);
     }
 
 

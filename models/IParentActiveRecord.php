@@ -12,20 +12,20 @@ interface IParentActiveRecord
     public function getSubTableParentClass();
 
 
-    public static function basicSubTableClass();
+    public static function basicSubTablesClass();
 //
 //
-    public static function basicSubTableView();
+    public static function basicSubTablesView();
 
 
     public static function subTablesClasses();
 
 
-    public static function subTableViews();
+    public static function subTablesViews();
 
 
     public static function subTablesRelationFields();
 
 
-    public static function subTableBaseView();
+    public static function subTablesBaseView();
 }

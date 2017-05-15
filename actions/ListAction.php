@@ -14,6 +14,9 @@ use Yii;
  */
 class ListAction extends MainAction
 {
+    const SEARCH_QUERY_FUNCTION = 'search_query_function';
+
+    public $search_query_function = 'baseSearchQuery';
 
 
     public function run() {
@@ -25,7 +28,7 @@ class ListAction extends MainAction
         }
         $search_model = new $search_class;
         $search_model->load(Yii::$app->request->queryParams);
-        $dataProvider = $search_model->search($search_model->baseSearchQuery());
+        $dataProvider = $search_model->search($search_model->{$this->search_query_function}());
         return $this->controller->{$this->render_method}($this->getView(), [
                                                                                'searchModel' => $search_model,
                                                                                'dataProvider' => $dataProvider,
