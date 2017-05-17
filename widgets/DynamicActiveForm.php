@@ -1,7 +1,7 @@
 <?php
-
 namespace dezmont765\yii2bundle\widgets;
 
+use dezmont765\yii2bundle\models\MainActiveRecord;
 use yii\bootstrap\ActiveForm;
 use yii\helpers\Url;
 
@@ -15,10 +15,13 @@ class DynamicActiveForm extends ActiveForm
 {
     public function init() {
         parent::init();
-        $this->validationUrl = Url::to(['ajax-validation']);
+        if($this->model instanceof MainActiveRecord) {
+            $this->validationUrl = Url::to(['ajax-validation', 'id' => $this->model->id]);
+        }
     }
 
 
+    public $model = null;
     public $enableAjaxValidation = true;
     public $enableClientValidation = false;
 }

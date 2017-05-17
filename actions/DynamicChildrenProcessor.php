@@ -2,9 +2,11 @@
 namespace dezmont765\yii2bundle\actions;
 
 use dezmont765\yii2bundle\components\geometry\IllegalArgumentException;
-use dezmont765\yii2bundle\models\AParentActiveRecord;
+use dezmont765\yii2bundle\models\AExtendableActiveRecord;
 use dezmont765\yii2bundle\models\MainActiveRecord;
 use Yii;
+use yii\base\Event;
+use yii\base\InvalidConfigException;
 use yii\base\Object;
 use yii\helpers\ArrayHelper;
 
@@ -13,13 +15,14 @@ use yii\helpers\ArrayHelper;
  * User: Dezmont
  * Date: 15.05.2017
  * Time: 13:40
- * @property AParentActiveRecord $child_models_parent_class
- * @property \dezmont765\yii2bundle\models\ASubActiveRecord $child_models_sub_class
- * @property \dezmont765\yii2bundle\models\ASubActiveRecord $child_models_basic_class
- * @property \dezmont765\yii2bundle\models\ASubActiveRecord[] | [] $child_models
+ * @property AExtendableActiveRecord $child_models_parent_class
+ * @property \dezmont765\yii2bundle\models\ADependentActiveRecord $child_models_sub_class
+ * @property \dezmont765\yii2bundle\models\ADependentActiveRecord $child_models_basic_class
+ * @property \dezmont765\yii2bundle\models\ADependentActiveRecord[] $child_models
  */
-class DynamicFieldsActionFieldsBundle extends Object
+abstract class DynamicChildrenProcessor extends Object implements IDynamicChildrenProcessor
 {
+    const AFTER_LOAD_CHILD_MODELS_EVENT = 'after_load_child_models_event';
     public $child_models = [];
     public $category = null;
     public $child_models_parent_class = null;
@@ -28,9 +31,10 @@ class DynamicFieldsActionFieldsBundle extends Object
     public $parent_binding_attribute = null;
     public $category_get_strategy = null;
     public $category_post_param = 'category';
-    public $child_models_search_strategy = null;
+    public $child_models_binding_strategy = null;
     public $category_attribute = 'category';
     public $child_models_basic_class = null;
+    public $relation_strategy = self::VIA_MAIN_RELATION;
 
     const CHILD_MODELS = 'child_models';
     const CATEGORY = 'category';
@@ -41,11 +45,34 @@ class DynamicFieldsActionFieldsBundle extends Object
     const PARENT_BINDING_ATTRIBUTE = 'parent_binding_attribute';
     const CATEGORY_GET_STRATEGY = 'category_get_strategy';
     const CATEGORY_POST_PARAM = 'category_post_param';
-    const CHILD_MODELS_SEARCH_STRATEGY = 'child_models_search_strategy';
+    const CHILD_MODELS_BINDING_STRATEGY = 'child_models_binding_strategy';
     const CATEGORY_ATTRIBUTE = 'category_attribute';
 
+    const VIA_SUB_RELATION = 'sub-relation';
+    const VIA_MAIN_RELATION = 'main-relation';
 
-    public function initialValues() {
+    const FIND_CHILD_SUB_MODELS = 'findChildSubModels';
+    const FIND_CHILD_SUB_MODELS_VIA_PARENT_CLASS_RELATION = 'findChildSubModelsViaParentClassRelation';
+    const FIND_CHILD_PARENT_MODELS_VIA_SUB_CLASS_RELATION = 'findChildParentModelsViaSubClassRelation';
+    const FIND_CHILD_PARENT_MODELS = 'findChildParentModels';
+
+
+    public function afterLoadChildModels() {
+        Event::trigger(get_called_class(), self::AFTER_LOAD_CHILD_MODELS_EVENT, new class($this) extends Event
+        {
+            public $field_processor = null;
+
+
+            public function __construct($field_processor, $config = []) {
+                parent::__construct($config);
+                $this->field_processor = $field_processor;
+            }
+        });
+        return true;
+    }
+
+
+    private function initialValues() {
         return [
             self::CHILD_MODELS => [],
             self::CHILD_MODELS_SUB_CLASS => null,
@@ -57,9 +84,9 @@ class DynamicFieldsActionFieldsBundle extends Object
 
 
     /**
-     * DynamicFieldsActionFieldsBundle constructor.
+     * DynamicChildrenProcessor constructor.
      * @param array $config
-     * @internal param AParentActiveRecord $child_models_parent_class
+     * @internal param AExtendableActiveRecord $child_models_parent_class
      * @internal param $child_binding_attribute
      * @internal param $parent_binding_attribute
      * @internal param $child_models_search_strategy
@@ -73,15 +100,17 @@ class DynamicFieldsActionFieldsBundle extends Object
         parent::__construct($config);
         $this->setCategory();
         $this->setChildModelsSubClass($config[self::CHILD_MODELS_SUB_CLASS]);
+        $this->setChildBindingAttribute();
         $child_models_parent_class = $this->child_models_parent_class;
-        $this->child_models_basic_class = $child_models_parent_class::basicSubTablesClass();;
+        $this->child_models_basic_class = $child_models_parent_class::dummySubTablesClass();;
     }
 
 
     private function setCategory() {
         $child_models_parent_class = $this->child_models_parent_class;
-        $post = Yii::$app->request->getBodyParam($child_models_parent_class::_formName(), []);
-        $category = isset($post[$this->category_post_param]) ? $post[$this->category_post_param] : null;
+        $categories = Yii::$app->request->getBodyParam('categories', []);
+        $category = isset($categories[$child_models_parent_class::_formName()]['category']) ?
+            $categories[$child_models_parent_class::_formName()]['category'] : null;
         if(is_callable($this->category_get_strategy)) {
             $this->category = call_user_func_array($this->category_get_strategy, $this->category);
         }
@@ -98,23 +127,6 @@ class DynamicFieldsActionFieldsBundle extends Object
     }
 
 
-    public function loadModelsFromRequest() {
-        if($this->child_models_sub_class !== null) {
-            $child_models_sub_class = $this->child_models_sub_class;
-            $child_models_data = Yii::$app->request->post($child_models_sub_class::_formName(), []);
-            foreach($child_models_data as $key => $child_models_attributes_set) {
-                if(!isset($this->child_models[$key]) || !$this->child_models[$key] instanceof $child_models_sub_class) {
-                    $this->child_models[$key] = new $child_models_sub_class;
-                }
-                $this->child_models[$key]->attributes = $child_models_attributes_set;
-            }
-            if(empty($this->child_models)) {
-                $this->child_models[] = new $child_models_sub_class;
-            }
-        }
-    }
-
-
     public function saveChildModels($parent_model) {
         foreach($this->child_models as &$child_model) {
             $child_model->{$this->child_binding_attribute} = $parent_model->{$this->parent_binding_attribute};
@@ -124,22 +136,22 @@ class DynamicFieldsActionFieldsBundle extends Object
     }
 
 
+    abstract protected function findChildModelsViaSubRelation($parent_model);
+
+
+    abstract protected function findChildModelsViaMainRelation($parent_model);
+
+
     public function findChildModels($parent_model) {
-        switch($this->child_models_search_strategy) {
-            case DynamicFieldsAction::FIND_CHILD_SUB_MODELS :
-                $this->findChildSubModels($parent_model);
+        switch($this->child_models_binding_strategy) {
+            case self::VIA_MAIN_RELATION :
+                $this->findChildModelsViaMainRelation($parent_model);
                 break;
-            case DynamicFieldsAction::FIND_CHILD_SUB_MODELS_VIA_PARENT_CLASS_RELATION :
-                $this->findChildSubModelsViaParentClassRelation($parent_model);
-                break;
-            case DynamicFieldsAction::FIND_CHILD_PARENT_MODELS :
-                $this->findChildParentModels($parent_model);
-                break;
-            case DynamicFieldsAction::FIND_CHILD_PARENT_MODELS_VIA_SUB_CLASS_RELATION :
-                $this->findChildParentModelsViaSubClassRelation($parent_model);
+            case self::VIA_SUB_RELATION :
+                $this->findChildModelsViaSubRelation($parent_model);
                 break;
             default:
-                throw new IllegalArgumentException('Please define child models search strategy');
+                throw new InvalidConfigException('Please define child models search strategy');
                 break;
         }
     }
@@ -152,8 +164,7 @@ class DynamicFieldsActionFieldsBundle extends Object
      * @param MainActiveRecord|null $binding_class
      * @return array|\yii\db\ActiveRecord[]
      */
-    private function findChildModelsInternal($search_class, $parent_model, $relation = null, $binding_class = null) {
-
+    protected function findChildModelsInternal($search_class, $parent_model, $relation = null, $binding_class = null) {
         if($search_class !== null) {
             $parent_binding_value = $parent_model->{$this->parent_binding_attribute};
             $child_models_query = $search_class::find();
@@ -173,43 +184,13 @@ class DynamicFieldsActionFieldsBundle extends Object
     }
 
 
-    private function findChildSubModels($parent_model) {
-        $child_models_sub_class = $this->child_models_sub_class;
-        if($child_models_sub_class !== null) {
-            $relation = $child_models_sub_class::getMainModelAttribute();
-            $this->findChildModelsInternal($child_models_sub_class, $parent_model, $relation,
-                                                  $child_models_sub_class);
+    private function setChildBindingAttribute() {
+        if($this->child_binding_attribute === null) {
+            $child_models_sub_class = $this->child_models_sub_class;
+            if($child_models_sub_class !== null) {
+                $this->child_binding_attribute = $child_models_sub_class::getParentBindingAttribute();
+            }
         }
-    }
-
-
-    private function findChildSubModelsViaParentClassRelation($parent_model) {
-        $child_models_sub_class = $this->child_models_sub_class;
-        if($child_models_sub_class !== null) {
-            $relation = $child_models_sub_class::getMainModelAttribute();
-            $this->findChildModelsInternal($child_models_sub_class,
-                                                  $parent_model,
-                                                  $relation,
-                                                  $this->child_models_sub_class);
-        }
-
-    }
-
-
-    private function findChildParentModels($parent_model) {
-        $this->findChildModelsInternal($this->child_models_parent_class, $parent_model);
-    }
-
-
-    /**
-     * @param $parent_model
-     * @internal param AParentActiveRecord|string $child_model_class
-     */
-    private function findChildParentModelsViaSubClassRelation($parent_model) {
-        $child_models_parent_class = $this->child_models_parent_class;
-        $relation = $child_models_parent_class::getSubTableRelationFieldByCategory($this->category);
-        $this->findChildModelsInternal($child_models_parent_class, $parent_model, $relation,
-                                              $this->child_models_sub_class);
     }
 
 

@@ -12,7 +12,7 @@ use yii\web\Response;
  * Date: 30.04.2017
  * Time: 21:22
  */
-class UpdateWithDynamicChildrenAction extends DynamicFieldsAction
+class UpdateWithDynamicChildrenAction extends DynamicChildrenAction
 {
 
 
@@ -24,8 +24,8 @@ class UpdateWithDynamicChildrenAction extends DynamicFieldsAction
 
     public function run($id = null) {
         parent::run($id);
-        $this->findExistingSubModels();
-        $this->initModels();
+        $this->findChildModels();
+        $this->loadChildModelsFromRequest();
         $this->save();
         return $this->controller->render($this->getView(), ['model' => $this->model]);
     }

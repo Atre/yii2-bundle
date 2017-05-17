@@ -11,7 +11,7 @@ use yii\web\Response;
  * Date: 30.04.2017
  * Time: 15:57
  */
-class CreateWithDynamicChildrenAction extends DynamicFieldsAction
+class CreateWithDynamicChildrenAction extends DynamicChildrenAction
 {
 
     public function getModel($id = null) {
@@ -23,7 +23,7 @@ class CreateWithDynamicChildrenAction extends DynamicFieldsAction
 
     public function run($id = null) {
         parent::run($id);
-        $this->initModels();
+        $this->loadChildModelsFromRequest();
         $this->save();
         return $this->controller->render($this->getView(), ['model' => $this->model]);
     }

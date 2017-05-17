@@ -1,5 +1,4 @@
 <?php
-
 namespace dezmont765\yii2bundle\models;
 
 use ReflectionClass;
@@ -10,8 +9,10 @@ use ReflectionClass;
  * Date: 12.05.2016
  * Time: 11:07
  */
-abstract class ASubActiveRecord extends MainActiveRecord implements ISubActiveRecord
+abstract class ADependentActiveRecord extends MainActiveRecord implements IDependentActiveRecord
 {
+
+
 
 
     public function getMainModelBindingAttribute() {
@@ -24,15 +25,23 @@ abstract class ASubActiveRecord extends MainActiveRecord implements ISubActiveRe
     }
 
 
+    public static function getParentBindingAttribute() {
+        return null;
+    }
+    public static function getParentBindingClass() {
+        return null;
+    }
+
+
     public function setChangedAttributes($attributes) {
         $this->_changed_attributes = array_merge($this->_changed_attributes, $attributes);
     }
 
 
-    public function saveMainModel() {
+    public function saveConnectedModel() {
         /** @var MainActiveRecord $main_class */
-        $main_class = $this->getMainModelClass();
-        $main_attribute = $this->getMainModelAttribute();
+        $main_class = $this->getConnectedModelClass();
+        $main_attribute = $this->getConnectedModelAttribute();
         if(!$this->$main_attribute instanceof $main_class) {
             $this->$main_attribute =
                 $main_class::findOne([$this->getMainModelBindingAttribute() => $this->getSelfBindingAttribute()]);
@@ -40,17 +49,10 @@ abstract class ASubActiveRecord extends MainActiveRecord implements ISubActiveRe
                 $this->$main_attribute = new $main_class();
             }
         }
-//        if($this->tableName() !== $this->$main_attribute->tableName()) {
         $this->$main_attribute->attributes = $this->getAttributes();
         $saved = $this->$main_attribute->save();
         $this->changedAttributes = $this->$main_attribute->changedAttributes;
         return $saved;
-//        }
-//        else {
-//            $this->$main_attribute->attributes = $this->attributes;
-//            $this->changedAttributes = $this->$main_attribute->changedAttributes;
-//            return false;
-//        }
     }
 
 
@@ -76,16 +78,21 @@ abstract class ASubActiveRecord extends MainActiveRecord implements ISubActiveRe
     }
 
 
+    public function saveInternal($insert) {
+        if(!$this->beforeSave($insert)) {
+            return false;
+        }
+        $this->afterSave($insert, []);
+        return true;
+    }
+
+
     public function insertInternal($attributes = null) {
-        $main_class = $this->getMainModelClass();
-        $main_attribute = $this->getMainModelAttribute();
-        $this->saveMainModel();
+        $main_class = $this->getConnectedModelClass();
+        $main_attribute = $this->getConnectedModelAttribute();
+        $this->saveConnectedModel();
         if($this->$main_attribute instanceof $main_class && $this->tableName() == $this->$main_attribute->tableName()) {
-            if(!$this->beforeSave(true)) {
-                return false;
-            }
-            $this->afterSave(true, []);
-            return true;
+            return $this->saveInternal(true);
         }
         else {
             return parent::insertInternal($attributes);
@@ -94,15 +101,11 @@ abstract class ASubActiveRecord extends MainActiveRecord implements ISubActiveRe
 
 
     public function updateInternal($attributes = null) {
-        $main_class = $this->getMainModelClass();
-        $main_attribute = $this->getMainModelAttribute();
-        $this->saveMainModel();
+        $main_class = $this->getConnectedModelClass();
+        $main_attribute = $this->getConnectedModelAttribute();
+        $this->saveConnectedModel();
         if($this->$main_attribute instanceof $main_class && $this->tableName() == $this->$main_attribute->tableName()) {
-            if(!$this->beforeSave(true)) {
-                return false;
-            }
-            $this->afterSave(false, []);
-            return true;
+            return $this->saveInternal(false);
         }
         else {
             return parent::updateInternal($attributes);
@@ -112,8 +115,8 @@ abstract class ASubActiveRecord extends MainActiveRecord implements ISubActiveRe
 
     public function afterFind() {
         parent::afterFind();
-        $main_class = $this->getMainModelClass();
-        $main_attribute = $this->getMainModelAttribute();
+        $main_class = $this->getConnectedModelClass();
+        $main_attribute = $this->getConnectedModelAttribute();
         if($this->$main_attribute instanceof $main_class) {
             $this->setAttributes($this->$main_attribute->attributes);
             $this->setOldAttributes($this->$main_attribute->attributes);
@@ -123,8 +126,8 @@ abstract class ASubActiveRecord extends MainActiveRecord implements ISubActiveRe
 
     public function beforeSave($insert) {
         if(parent::beforeSave($insert)) {
-            $main_class = $this->getMainModelClass();
-            $main_attribute = $this->getMainModelAttribute();
+            $main_class = $this->getConnectedModelClass();
+            $main_attribute = $this->getConnectedModelAttribute();
             if($this->$main_attribute instanceof $main_class) {
                 $this->attributes = $this->$main_attribute->attributes;
             }

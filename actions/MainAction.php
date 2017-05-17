@@ -41,7 +41,7 @@ class MainAction extends Action
 
 
     public function getModelClass() {
-        $model_class = $this->model_class !== null ? $this->model_class : $this->controller->getModelClass();
+        $model_class = $this->model_class ?? $this->controller->getModelClass();
         return $model_class;
     }
 

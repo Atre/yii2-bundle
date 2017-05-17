@@ -204,7 +204,7 @@ class MainController extends Controller
 
 
     public function getModelClass() {
-        return '';
+        return null;
     }
 
 

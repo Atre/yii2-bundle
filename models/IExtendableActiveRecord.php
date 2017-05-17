@@ -7,15 +7,15 @@ namespace dezmont765\yii2bundle\models;
  * Date: 08.05.2017
  * Time: 11:41
  */
-interface IParentActiveRecord
+interface IExtendableActiveRecord
 {
-    public function getSubTableParentClass();
+    public function getSubTableMainClass();
 
 
-    public static function basicSubTablesClass();
+    public static function dummySubTablesClass();
 //
 //
-    public static function basicSubTablesView();
+    public static function dummySubTablesView();
 
 
     public static function subTablesClasses();
@@ -28,4 +28,5 @@ interface IParentActiveRecord
 
 
     public static function subTablesBaseView();
+
 }

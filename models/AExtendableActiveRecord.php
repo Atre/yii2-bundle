@@ -1,5 +1,4 @@
 <?php
-
 namespace dezmont765\yii2bundle\models;
 /**
  * Created by PhpStorm.
@@ -7,28 +6,38 @@ namespace dezmont765\yii2bundle\models;
  * Date: 17.04.2017
  * Time: 17:00
  * @property $category
+ * @property MainActiveRecord $subModel
  */
-abstract class AParentActiveRecord extends MainActiveRecord implements IParentActiveRecord
+abstract class AExtendableActiveRecord extends MainActiveRecord implements IExtendableActiveRecord
 {
 
 
-    private $sub_table_relation = null;
+    private $sub_model = null;
 
 
     /**
-     * @return \dezmont765\yii2bundle\models\ASubActiveRecord
+     * @return \dezmont765\yii2bundle\models\ADependentActiveRecord
      */
-    public function getSubTableRelation() {
-        $parent_class = $this->getSubTableParentClass();
-        if($this->sub_table_relation instanceof $parent_class) {
-            return $this->sub_table_relation;
+    public function getSubModel() {
+        $parent_class = $this->getSubTableMainClass();
+        if($this->sub_model instanceof $parent_class) {
+            return $this->sub_model;
         }
         $sub_table_relation_field = $this->getSubTableRelationFieldByCategory($this->category);
         if($sub_table_relation_field === null) {
             return null;
         }
-        $this->sub_table_relation = $this->$sub_table_relation_field;
-        return $this->sub_table_relation;
+        $this->sub_model = $this->$sub_table_relation_field;
+        $sub_table_class = self::getSubTableClassByCategory($this->category);
+        if(!$this->sub_model instanceof $sub_table_class) {
+            $this->sub_model = new $sub_table_class;
+        }
+        return $this->sub_model;
+    }
+
+
+    public function setSubModel($sub_model) {
+        $this->sub_model = $sub_model;
     }
 
 
@@ -45,14 +54,14 @@ abstract class AParentActiveRecord extends MainActiveRecord implements IParentAc
 
     /**
      * @param $category
-     * @return ASubActiveRecord|string
+     * @return ADependentActiveRecord|string
      */
     public static function getSubTableClassByCategory($category) {
         if(isset(static::subTablesClasses()[$category])) {
             return static::subTablesClasses()[$category];
         }
         else {
-            $basic_form_class = static::basicSubTablesClass();
+            $basic_form_class = static::dummySubTablesClass();
             return $basic_form_class;
         }
     }
@@ -62,7 +71,7 @@ abstract class AParentActiveRecord extends MainActiveRecord implements IParentAc
         if(isset(static::subTablesViews()[$category])) {
             return static::subTablesViews()[$category];
         }
-        else return static::basicSubTablesView();
+        else return static::dummySubTablesView();
     }
 
 
@@ -79,12 +88,12 @@ abstract class AParentActiveRecord extends MainActiveRecord implements IParentAc
     }
 
 
-    public static function basicSubTablesClass() {
+    public static function dummySubTablesClass() {
         return null;
     }
 
 
-    public static function basicSubTablesView() {
+    public static function dummySubTablesView() {
         return null;
     }
 
