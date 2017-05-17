@@ -1,6 +1,6 @@
 <?php
 namespace dezmont765\yii2bundle\actions;
-class AddDynamicFieldsAction extends LoadSingleDynamicFieldsAction
+class AddDynamicFieldsAction extends LoadDynamicFieldsAction
 {
     public function initModels() {
         foreach($this->fields as &$fields) {

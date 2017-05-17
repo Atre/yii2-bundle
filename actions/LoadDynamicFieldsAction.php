@@ -4,7 +4,7 @@ namespace dezmont765\yii2bundle\actions;
 
 use dezmont765\yii2bundle\widgets\PartialActiveForm;
 
-class LoadSingleDynamicFieldsAction extends MultipleDynamicFieldsAction
+class LoadDynamicFieldsAction extends DynamicFieldsAction
 {
 
     public function getModel($id = null) {

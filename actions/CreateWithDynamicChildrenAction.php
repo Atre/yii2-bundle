@@ -11,7 +11,7 @@ use yii\web\Response;
  * Date: 30.04.2017
  * Time: 15:57
  */
-class CreateWithDynamicChildrenAction extends MultipleDynamicFieldsAction
+class CreateWithDynamicChildrenAction extends DynamicFieldsAction
 {
 
     public function getModel($id = null) {

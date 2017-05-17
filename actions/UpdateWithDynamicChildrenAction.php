@@ -12,7 +12,7 @@ use yii\web\Response;
  * Date: 30.04.2017
  * Time: 21:22
  */
-class UpdateWithDynamicChildrenAction extends MultipleDynamicFieldsAction
+class UpdateWithDynamicChildrenAction extends DynamicFieldsAction
 {
 
 

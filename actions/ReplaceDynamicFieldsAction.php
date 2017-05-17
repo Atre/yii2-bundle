@@ -3,7 +3,7 @@ namespace dezmont765\yii2bundle\actions;
 
 use dezmont765\yii2bundle\widgets\PartialActiveForm;
 
-class ReplaceDynamicFieldsAction extends LoadSingleDynamicFieldsAction
+class ReplaceDynamicFieldsAction extends LoadDynamicFieldsAction
 {
     private $key = null;
 

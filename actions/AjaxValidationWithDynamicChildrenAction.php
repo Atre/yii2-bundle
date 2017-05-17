@@ -11,7 +11,7 @@ use yii\web\Response;
  * Date: 11.05.2017
  * Time: 12:07
  */
-class AjaxValidationWithDynamicChildrenAction extends MultipleDynamicFieldsAction
+class AjaxValidationWithDynamicChildrenAction extends DynamicFieldsAction
 {
 
 
