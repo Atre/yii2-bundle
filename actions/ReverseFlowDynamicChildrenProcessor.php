@@ -23,6 +23,14 @@ class ReverseFlowDynamicChildrenProcessor extends DynamicChildrenProcessor
                 }
                 $this->child_models[$key]->attributes = $child_models_attributes_set;
             }
+        }
+    }
+
+
+    public function afterLoadChildModels() {
+        parent::afterLoadChildModels();
+        if($this->child_models_sub_class) {
+            $child_models_sub_class = $this->child_models_sub_class;
             if(empty($this->child_models)) {
                 $this->child_models[] = new $child_models_sub_class;
             }

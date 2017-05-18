@@ -40,9 +40,9 @@ class DirectFlowDynamicChildrenProcessor extends DynamicChildrenProcessor
         if($this->child_models_parent_class !== null && $this->child_models_sub_class !== null) {
             $child_models_parent_class = $this->child_models_parent_class;
             $child_models_sub_class = $this->child_models_sub_class;
-            $child_models_parent_data = Yii::$app->request->post($child_models_parent_class::_formName(), []);
+            $this->child_models_data = Yii::$app->request->post($child_models_parent_class::_formName(), []);
             $child_models_sub_data = Yii::$app->request->post($child_models_sub_class::_formName(), []);
-            foreach($child_models_parent_data as $key => $child_models_attributes_set) {
+            foreach($this->child_models_data as $key => $child_models_attributes_set) {
                 if(!isset($this->child_models[$key]) ||
                    !$this->child_models[$key] instanceof $child_models_parent_class
                 ) {
@@ -54,6 +54,14 @@ class DirectFlowDynamicChildrenProcessor extends DynamicChildrenProcessor
                     $this->child_models[$key]->subModel->load($child_models_sub_data[$key]);
                 }
             }
+        }
+    }
+
+
+    public function afterLoadChildModels() {
+        parent::afterLoadChildModels();
+        if($this->child_models_parent_class) {
+            $child_models_parent_class = $this->child_models_parent_class;
             if(empty($this->child_models)) {
                 $this->child_models[] = new $child_models_parent_class;
             }

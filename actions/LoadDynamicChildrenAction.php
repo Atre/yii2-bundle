@@ -1,5 +1,4 @@
 <?php
-
 namespace dezmont765\yii2bundle\actions;
 
 use dezmont765\yii2bundle\widgets\PartialActiveForm;
@@ -20,8 +19,15 @@ class LoadDynamicChildrenAction extends DynamicChildrenAction
     public function run($id = null) {
         parent::run($id);
         $this->findChildModels();
-//        $this->loadChildModelsFromRequest();
+        $this->loadChildModelsFromRequest();
         return $this->render();
+    }
+
+    //todo need to invent the mechanism of skipping the  $fields->loadChildModelsFromRequest(); (but not the "if" bullshit)
+    public function loadChildModelsFromRequest() {
+        foreach($this->fields as &$fields) {
+            $fields->afterLoadChildModels();
+        }
     }
 
 

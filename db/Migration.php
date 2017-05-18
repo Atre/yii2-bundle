@@ -12,7 +12,7 @@ use yii\db\mysql\Schema;
 class Migration extends \yii\db\Migration
 {
     public $dbOptions;
-    public $tableName = 'air_rates';
+    protected $tableName = 'air_rates';
     public function init()
     {
         parent::init();

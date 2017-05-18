@@ -1,6 +1,7 @@
 <?php
 namespace dezmont765\yii2bundle\actions;
 
+use dezmont765\yii2bundle\events\DynamicChildrenAfterDataLoadEvent;
 use dezmont765\yii2bundle\widgets\PartialActiveForm;
 use yii\base\Event;
 
@@ -14,22 +15,14 @@ class ReplaceDynamicFieldsAction extends LoadDynamicChildrenAction
         $self = $this;
         $this->key = \Yii::$app->request->getBodyParam('key');
         Event::on(ReverseFlowDynamicChildrenProcessor::className(),
-                  ReverseFlowDynamicChildrenProcessor::AFTER_LOAD_CHILD_MODELS_EVENT,
-            function (Event $event) use ($self) {
-                $processor = $event->field_processor;
-                $self->transform($processor->child_models);
-            });
+                  DynamicChildrenProcessor::AFTER_LOAD_CHILD_MODELS_EVENT, [$this, 'transform']);
         Event::on(DirectFlowDynamicChildrenProcessor::className(),
-                  DirectFlowDynamicChildrenProcessor::AFTER_LOAD_CHILD_MODELS_EVENT,
-            function (Event $event) use ($self) {
-                $processor = $event->field_processor;
-                $self->transform($processor->child_models);
-            });
+                  DynamicChildrenProcessor::AFTER_LOAD_CHILD_MODELS_EVENT, [$this, 'transform']);
     }
 
 
-    public function transform(&$models) {
-        $models = [$this->key => $models[$this->key]];
+    public function transform(DynamicChildrenAfterDataLoadEvent $event) {
+        $event->field_processor->child_models = [$this->key => $event->field_processor->child_models[$this->key]];
     }
 
 
@@ -37,6 +30,13 @@ class ReplaceDynamicFieldsAction extends LoadDynamicChildrenAction
         $this->model = $this->getModel($id);
         $this->loadChildModelsFromRequest();
         return $this->render();
+    }
+
+    public function loadChildModelsFromRequest() {
+        foreach($this->fields as &$fields) {
+            $fields->loadChildModelsFromRequest();
+            $fields->afterLoadChildModels();
+        }
     }
 
 

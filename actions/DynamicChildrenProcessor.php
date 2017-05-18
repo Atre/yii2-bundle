@@ -2,6 +2,7 @@
 namespace dezmont765\yii2bundle\actions;
 
 use dezmont765\yii2bundle\components\geometry\IllegalArgumentException;
+use dezmont765\yii2bundle\events\DynamicChildrenAfterDataLoadEvent;
 use dezmont765\yii2bundle\models\AExtendableActiveRecord;
 use dezmont765\yii2bundle\models\MainActiveRecord;
 use Yii;
@@ -35,6 +36,7 @@ abstract class DynamicChildrenProcessor extends Object implements IDynamicChildr
     public $category_attribute = 'category';
     public $child_models_basic_class = null;
     public $relation_strategy = self::VIA_MAIN_RELATION;
+    public $child_models_data = [];
 
     const CHILD_MODELS = 'child_models';
     const CATEGORY = 'category';
@@ -58,16 +60,8 @@ abstract class DynamicChildrenProcessor extends Object implements IDynamicChildr
 
 
     public function afterLoadChildModels() {
-        Event::trigger(get_called_class(), self::AFTER_LOAD_CHILD_MODELS_EVENT, new class($this) extends Event
-        {
-            public $field_processor = null;
-
-
-            public function __construct($field_processor, $config = []) {
-                parent::__construct($config);
-                $this->field_processor = $field_processor;
-            }
-        });
+        Event::trigger(get_called_class(), self::AFTER_LOAD_CHILD_MODELS_EVENT,
+                       new DynamicChildrenAfterDataLoadEvent($this));
         return true;
     }
 
