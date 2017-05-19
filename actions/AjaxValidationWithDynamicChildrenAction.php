@@ -1,5 +1,4 @@
 <?php
-
 namespace dezmont765\yii2bundle\actions;
 
 use dezmont765\yii2bundle\widgets\PartialActiveForm;
@@ -17,7 +16,12 @@ class AjaxValidationWithDynamicChildrenAction extends DynamicChildrenAction
 
     public function getModel($id) {
         $this->model_class = $this->getModelClass();
-        $model = $this->controller->findModel($this->model_class, $id,null,false);
+        if($id !== null) {
+            $model = $this->controller->findModel($this->model_class, $id, null, false);
+        }
+        else {
+            $model = null;
+        }
         if(!$model instanceof $this->model_class) {
             $model_class = $this->model_class;
             $model = new $model_class;
