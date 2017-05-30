@@ -1,7 +1,7 @@
 <?php
 namespace dezmont765\yii2bundle\actions;
 
-use dezmont765\yii2bundle\components\geometry\IllegalArgumentException;
+use dezmont765\yii2bundle\behaviors\SaveDependentModelsBehavior;
 use dezmont765\yii2bundle\events\DynamicChildrenAfterDataLoadEvent;
 use dezmont765\yii2bundle\models\AExtendableActiveRecord;
 use dezmont765\yii2bundle\models\MainActiveRecord;
@@ -16,28 +16,97 @@ use yii\helpers\ArrayHelper;
  * User: Dezmont
  * Date: 15.05.2017
  * Time: 13:40
- * @property AExtendableActiveRecord $child_models_parent_class
- * @property \dezmont765\yii2bundle\models\ADependentActiveRecord $child_models_sub_class
- * @property \dezmont765\yii2bundle\models\ADependentActiveRecord $child_models_basic_class
+ *
  * @property \dezmont765\yii2bundle\models\ADependentActiveRecord[] $child_models
+ * This class contains the main logic of processing any kind of children, saved with their parent within single form.
+ * It happens, that we need to split some entity into the group of entities, which have a few common attributes and few
+ *     different. In that case very useful to have them stored in form of one "extendable" table(which contains all
+ *     common attributes and a special "category" field), and several additional "dependent" tables bound via
+ *     one-to-one relation. This technique is very similar to OOP inheritance.
+ * There are 2 options of building that :
+ * 1) "Direct" flow
+ *     In this option "dependent" model is stored inside "extendable" one within "subModel" field.
+ * @see DirectFlowDynamicChildrenProcessor. It loads all extendable and dependent models separately, and then using
+ * @see SaveDependentModelsBehavior saves them within saving cycle.
+ * 2) "Reverse" flow
+ *     In this option we have a special virtual forms, which inherit from the one main "dependent" model. This model
+ *     contains duplicates of all common fields to allow our virtual form validate and process them. Each of these
+ *     forms is connected to it's own "dependent" table, thus the "extendable" model should be saved before them.
+ *     So that's why we call this option "reverse": we save the "extendable" model withing saving cycle of "dependent"
+ *     form.
+ * @see ReverseFlowDynamicChildrenProcessor
  */
 abstract class DynamicChildrenProcessor extends Object implements IDynamicChildrenProcessor
 {
-    const AFTER_LOAD_CHILD_MODELS_EVENT = 'after_load_child_models_event';
+
     public $child_models = [];
     public $category = null;
+    /**
+     * @var AExtendableActiveRecord|string $child_models_parent_class
+     * This is "extendable" models class string
+     * @see DynamicChildrenProcessor to get the idea what this attribute is responsible for
+     */
     public $child_models_parent_class = null;
+    /**
+     * @var \dezmont765\yii2bundle\models\ADependentActiveRecord $child_models_sub_class
+     * This is "dependent" models class string
+     * @see DynamicChildrenProcessor to get the idea what this attribute is responsible for
+     */
     public $child_models_sub_class = null;
+    /**
+     * Name of the attribute which binds a "child" model with a "parent" model
+     * @var null
+     */
     public $child_binding_attribute = null;
+    /**
+     * Name of the attribute which binds a "parent" model with a "child" model
+     * @var null
+     */
     public $parent_binding_attribute = null;
+    /**
+     * @var callable $category_get_strategy
+     * Determines the process of getting the "category".
+     */
     public $category_get_strategy = null;
+    /**
+     * The name of the post parameter where the "category" is stored
+     * @var string
+     */
     public $category_post_param = 'category';
+    /**
+     * There are 2 options of binding the "parent" and "child" models together.
+     * 1) When the binding is between the "parent" model and the "extendable" model. This is also applied when
+     * there are no complex "extendable" - "dependent" relation and we have just simple children.
+     * @see DynamicChildrenProcessor::VIA_MAIN_RELATION
+     * 2) When the binding is between the "parent" model and the "dependent" model. This is a more complex one, when we
+     * bind to the "extendable" model through the "dependent"
+     * @see DynamicChildrenProcessor::VIA_SUB_RELATION
+     * @var string $child_models_binding_strategy
+     */
     public $child_models_binding_strategy = null;
+    /**
+     * The name of the db field where the category info is stored
+     * @var string
+     */
     public $category_attribute = 'category';
+    /**
+     * It happens sometime in case of "reverse" flow, that one of "dependent" model doesn't have it's own table. This
+     * case needs to be processed differently, so the class should be determined explicitly
+     * @var \dezmont765\yii2bundle\models\ADependentActiveRecord|string
+     */
     public $child_models_basic_class = null;
     public $relation_strategy = self::VIA_MAIN_RELATION;
     public $child_models_data = [];
 
+    /**
+     * Name of the event, which happens after gathering children related data from the source (currently only from
+     * request)
+     */
+    const AFTER_LOAD_CHILD_MODELS_EVENT = 'after_load_child_models_event';
+    /**
+     * Constants block begin
+     * All constants described below are made just for convenience. They duplicate the attributes names.
+     */
     const CHILD_MODELS = 'child_models';
     const CATEGORY = 'category';
     const CHILD_MODELS_PARENT_CLASS = 'child_models_parent_class';
@@ -57,8 +126,14 @@ abstract class DynamicChildrenProcessor extends Object implements IDynamicChildr
     const FIND_CHILD_SUB_MODELS_VIA_PARENT_CLASS_RELATION = 'findChildSubModelsViaParentClassRelation';
     const FIND_CHILD_PARENT_MODELS_VIA_SUB_CLASS_RELATION = 'findChildParentModelsViaSubClassRelation';
     const FIND_CHILD_PARENT_MODELS = 'findChildParentModels';
-
-
+    /** Constants block end */
+    /**
+     * @return bool
+     */
+    /**
+     * Happens after gathering children related data from the source.
+     * @return bool
+     */
     public function afterLoadChildModels() {
         Event::trigger(get_called_class(), self::AFTER_LOAD_CHILD_MODELS_EVENT,
                        new DynamicChildrenAfterDataLoadEvent($this));
@@ -100,6 +175,11 @@ abstract class DynamicChildrenProcessor extends Object implements IDynamicChildr
     }
 
 
+    /**
+     * Sets the current category, trying to get it from different sources.
+     * 1) From $_POST['categories'] by child_models_parent_class. @see $child_models_parent_class
+     * 2) Using the callback
+     */
     private function setCategory() {
         $child_models_parent_class = $this->child_models_parent_class;
         $categories = Yii::$app->request->getBodyParam('categories', []);
@@ -112,6 +192,10 @@ abstract class DynamicChildrenProcessor extends Object implements IDynamicChildr
     }
 
 
+    /**
+     * Sets the class of "dependent" model directly or by category
+     * @param $child_models_sub_class
+     */
     private function setChildModelsSubClass($child_models_sub_class) {
         if($this->category) {
             $child_models_parent_class = $this->child_models_parent_class;
@@ -121,6 +205,10 @@ abstract class DynamicChildrenProcessor extends Object implements IDynamicChildr
     }
 
 
+    /**
+     * Saves all children, sets their binding attribute. E.g children.parent_id = parent.id
+     * @param $parent_model
+     */
     public function saveChildModels($parent_model) {
         foreach($this->child_models as &$child_model) {
             $child_model->{$this->child_binding_attribute} = $parent_model->{$this->parent_binding_attribute};
@@ -130,9 +218,19 @@ abstract class DynamicChildrenProcessor extends Object implements IDynamicChildr
     }
 
 
+    /**
+     * @see $child_models_search_strategy
+     * @param $parent_model
+     * @return mixed
+     */
     abstract protected function findChildModelsViaSubRelation($parent_model);
 
 
+    /**
+     * @see $child_models_binding_strategy
+     * @param $parent_model
+     * @return mixed
+     */
     abstract protected function findChildModelsViaMainRelation($parent_model);
 
 
@@ -152,6 +250,7 @@ abstract class DynamicChildrenProcessor extends Object implements IDynamicChildr
 
 
     /**
+     * Performs search for children
      * @param MainActiveRecord $search_class
      * @param $parent_model
      * @param null $relation
@@ -178,6 +277,9 @@ abstract class DynamicChildrenProcessor extends Object implements IDynamicChildr
     }
 
 
+    /**
+     * Sets the binding from children to parent directly or via "dependent" model class
+     */
     private function setChildBindingAttribute() {
         if($this->child_binding_attribute === null) {
             $child_models_sub_class = $this->child_models_sub_class;

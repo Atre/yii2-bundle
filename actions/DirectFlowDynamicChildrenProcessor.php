@@ -12,7 +12,9 @@ use Yii;
  */
 class DirectFlowDynamicChildrenProcessor extends DynamicChildrenProcessor
 {
-
+    /**
+     * @inheritdoc
+     */
     protected function findChildModelsViaSubRelation($parent_model) {
         $child_models_parent_class = $this->child_models_parent_class;
         if($this->category) {
@@ -22,12 +24,16 @@ class DirectFlowDynamicChildrenProcessor extends DynamicChildrenProcessor
         }
     }
 
-
+    /**
+     * @inheritdoc
+     */
     protected function findChildModelsViaMainRelation($parent_model) {
         $this->findChildModelsInternal($this->child_models_parent_class, $parent_model);
     }
 
-
+    /**
+     * @inheritdoc
+     */
     public function saveChildModels($parent_model) {
         foreach($this->child_models as &$child_model) {
             $child_model->subModel->{$this->child_binding_attribute} = $parent_model->{$this->parent_binding_attribute};
@@ -35,7 +41,9 @@ class DirectFlowDynamicChildrenProcessor extends DynamicChildrenProcessor
         }
     }
 
-
+    /**
+     * @inheritdoc
+     */
     public function loadChildModelsFromRequest() {
         if($this->child_models_parent_class !== null && $this->child_models_sub_class !== null) {
             $child_models_parent_class = $this->child_models_parent_class;
@@ -57,7 +65,9 @@ class DirectFlowDynamicChildrenProcessor extends DynamicChildrenProcessor
         }
     }
 
-
+    /**
+     * @inheritdoc
+     */
     public function afterLoadChildModels() {
         parent::afterLoadChildModels();
         if($this->child_models_parent_class) {

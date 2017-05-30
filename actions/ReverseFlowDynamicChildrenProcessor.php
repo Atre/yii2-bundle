@@ -13,6 +13,9 @@ use yii\base\InvalidConfigException;
  */
 class ReverseFlowDynamicChildrenProcessor extends DynamicChildrenProcessor
 {
+    /**
+     * @inheritdoc
+     */
     public function loadChildModelsFromRequest() {
         if($this->child_models_sub_class !== null) {
             $child_models_sub_class = $this->child_models_sub_class;
@@ -27,6 +30,9 @@ class ReverseFlowDynamicChildrenProcessor extends DynamicChildrenProcessor
     }
 
 
+    /**
+     * @inheritdoc
+     */
     public function afterLoadChildModels() {
         parent::afterLoadChildModels();
         if($this->child_models_sub_class) {
@@ -37,7 +43,9 @@ class ReverseFlowDynamicChildrenProcessor extends DynamicChildrenProcessor
         }
     }
 
-
+    /**
+     * @inheritdoc
+     */
     protected function findChildModelsViaSubRelation($parent_model) {
         $child_models_sub_class = $this->child_models_sub_class;
         if($child_models_sub_class !== null) {
@@ -47,7 +55,9 @@ class ReverseFlowDynamicChildrenProcessor extends DynamicChildrenProcessor
         }
     }
 
-
+    /**
+     * @inheritdoc
+     */
     protected function findChildModelsViaMainRelation($parent_model) {
         $child_models_sub_class = $this->child_models_sub_class;
         if($child_models_sub_class !== null) {

@@ -46,12 +46,20 @@ class MainAction extends Action
     }
 
 
+    /**
+     * Returns name of the view file
+     * @return null|string
+     */
     public function getView() {
         $view = $this->view !== null ? $this->view : $this->getDefaultView();
         return $view;
     }
 
 
+    /**
+     * Returns the name of the view, which is taken by default.
+     * @return string
+     */
     public function getDefaultView() {
         return '';
     }
