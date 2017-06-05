@@ -12,7 +12,6 @@ class ReplaceDynamicFieldsAction extends LoadDynamicChildrenAction
 
     public function init() {
         parent::init();
-        $self = $this;
         $this->key = \Yii::$app->request->getBodyParam('key');
         Event::on(ReverseFlowDynamicChildrenProcessor::className(),
                   DynamicChildrenProcessor::AFTER_LOAD_CHILD_MODELS_EVENT, [$this, 'transform']);

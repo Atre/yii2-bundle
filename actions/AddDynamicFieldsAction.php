@@ -25,6 +25,12 @@ class AddDynamicFieldsAction extends LoadDynamicChildrenAction
             });
     }
 
+    public function loadChildModelsFromRequest() {
+        foreach($this->fields as &$fields) {
+            $fields->loadChildModelsFromRequest();
+            $fields->afterLoadChildModels();
+        }
+    }
 
     public function sliceOne($class, &$models_array) {
         $models_array[] = new $class;

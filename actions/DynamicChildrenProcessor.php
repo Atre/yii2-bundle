@@ -19,7 +19,7 @@ use yii\helpers\ArrayHelper;
  *
  * @property \dezmont765\yii2bundle\models\ADependentActiveRecord[] $child_models
  * This class contains the main logic of processing any kind of children, saved with their parent within single form.
- * It happens, that we need to split some entity into the group of entities, which have a few common attributes and few
+ * It happens, that we need to split some entity into the group of entities, which have few common attributes and few
  *     different. In that case very useful to have them stored in form of one "extendable" table(which contains all
  *     common attributes and a special "category" field), and several additional "dependent" tables bound via
  *     one-to-one relation. This technique is very similar to OOP inheritance.
