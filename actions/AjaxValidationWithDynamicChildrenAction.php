@@ -30,8 +30,7 @@ class AjaxValidationWithDynamicChildrenAction extends DynamicChildrenAction
     }
 
 
-    public function run($id = null) {
-        parent::run($id);
+    public function run() {
         \Yii::$app->response->format = Response::FORMAT_JSON;
         if(\Yii::$app->request->isAjax) {
             $this->loadChildModelsFromRequest();

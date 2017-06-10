@@ -1,7 +1,7 @@
 <?php
-
 namespace dezmont765\yii2bundle\widgets;
 
+use dezmont765\yii2bundle\models\AExtendableActiveRecord;
 use dezmont765\yii2bundle\models\MainActiveRecord;
 use Yii;
 use yii\base\Model;
@@ -41,6 +41,9 @@ class PartialActiveForm extends ActiveForm
         /* @var $model Model */
         foreach($models as $key => $model) {
             self::ajaxValidation($result, $model, $attributes, $key);
+            if($model instanceof AExtendableActiveRecord) {
+                 self::ajaxValidation($result, $model, $attributes, $key);
+            }
         }
         return $result;
     }

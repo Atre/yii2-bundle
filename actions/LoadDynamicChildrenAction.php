@@ -16,8 +16,7 @@ class LoadDynamicChildrenAction extends DynamicChildrenAction
     }
 
 
-    public function run($id = null) {
-        parent::run($id);
+    public function run() {
         $this->findChildModels();
         $this->loadChildModelsFromRequest();
         return $this->render();
@@ -36,9 +35,10 @@ class LoadDynamicChildrenAction extends DynamicChildrenAction
         foreach($this->fields as $field) {
             $child_models_parent_class = $field->child_models_parent_class;
             $fields_html .=
-                $this->controller->renderAjax($child_models_parent_class::subTablesBaseView(), [
+                $this->controller->renderAjax($child_models_parent_class::dependentModelsBaseView(), [
                     'view' => $child_models_parent_class::getSubTableViewByCategory($field->category),
                     'models' => $field->child_models,
+                    'processor' => $field
                 ]);
         }
         return $this->controller->asJson(['html' => $fields_html,

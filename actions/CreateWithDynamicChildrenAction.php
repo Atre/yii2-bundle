@@ -1,5 +1,4 @@
 <?php
-
 namespace dezmont765\yii2bundle\actions;
 
 use dezmont765\yii2bundle\widgets\PartialActiveForm;
@@ -21,10 +20,12 @@ class CreateWithDynamicChildrenAction extends DynamicChildrenAction
     }
 
 
-    public function run($id = null) {
-        parent::run($id);
+    public function run() {
         $this->loadChildModelsFromRequest();
-        $this->save();
+        $result = $this->save();
+        if($result !== null) {
+            return $result;
+        }
         return $this->controller->render($this->getView(), ['model' => $this->model]);
     }
 

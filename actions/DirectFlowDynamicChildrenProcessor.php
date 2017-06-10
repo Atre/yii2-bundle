@@ -24,12 +24,14 @@ class DirectFlowDynamicChildrenProcessor extends DynamicChildrenProcessor
         }
     }
 
+
     /**
      * @inheritdoc
      */
     protected function findChildModelsViaMainRelation($parent_model) {
         $this->findChildModelsInternal($this->child_models_parent_class, $parent_model);
     }
+
 
     /**
      * @inheritdoc
@@ -40,6 +42,7 @@ class DirectFlowDynamicChildrenProcessor extends DynamicChildrenProcessor
             $child_model->save();
         }
     }
+
 
     /**
      * @inheritdoc
@@ -65,18 +68,12 @@ class DirectFlowDynamicChildrenProcessor extends DynamicChildrenProcessor
         }
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function afterLoadChildModels() {
-        parent::afterLoadChildModels();
-        if($this->child_models_parent_class) {
-            $child_models_parent_class = $this->child_models_parent_class;
-            if(empty($this->child_models)) {
-                $this->child_models[] = new $child_models_parent_class;
-            }
-        }
+
+    public function getChildModelsMainClass() {
+        return $this->child_models_parent_class;
     }
+
+
 
 
 }

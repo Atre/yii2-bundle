@@ -1,29 +1,22 @@
 <?php
 namespace dezmont765\yii2bundle\actions;
 
-use yii\base\Event;
+use dezmont765\yii2bundle\events\DynamicChildrenAfterDataLoadEvent;
 
 class AddDynamicFieldsAction extends LoadDynamicChildrenAction
 {
 
-    public function init() {
-        parent::init();
-        $self = $this;
-        Event::on(ReverseFlowDynamicChildrenProcessor::className(),
-                  ReverseFlowDynamicChildrenProcessor::AFTER_LOAD_CHILD_MODELS_EVENT,
-            function (Event $event) use ($self) {
-                $processor = $event->field_processor;
-                $new_class = $processor->child_models_sub_class;
-                $self->sliceOne($new_class, $processor->child_models);
-            });
-        Event::on(DirectFlowDynamicChildrenProcessor::className(),
-                  DirectFlowDynamicChildrenProcessor::AFTER_LOAD_CHILD_MODELS_EVENT,
-            function (Event $event) use ($self) {
-                $processor = $event->field_processor;
-                $new_class = $processor->child_models_parent_class;
-                $self->sliceOne($new_class, $processor->child_models);
-            });
+
+    public function events() {
+        return [
+            DynamicChildrenProcessor::AFTER_LOAD_CHILD_MODELS_EVENT => [
+                DynamicChildrenProcessor::class => [
+                    [$this, 'transform']
+                ],
+            ]
+        ];
     }
+
 
     public function loadChildModelsFromRequest() {
         foreach($this->fields as &$fields) {
@@ -32,14 +25,16 @@ class AddDynamicFieldsAction extends LoadDynamicChildrenAction
         }
     }
 
-    public function sliceOne($class, &$models_array) {
-        $models_array[] = new $class;
-        $models_array = array_slice($models_array, -1, 1, true);
+
+    public function transform(DynamicChildrenAfterDataLoadEvent $event) {
+        $processor = $event->field_processor;
+        $new_class = $processor->child_models_parent_class;
+        $event->field_processor->child_models[] = new $new_class;
+        $event->field_processor->child_models = array_slice($event->field_processor->child_models, -1, 1, true);
     }
 
 
-    public function run($id = null) {
-        $this->model = $this->getModel($id);
+    public function run() {
         $this->loadChildModelsFromRequest();
         return $this->render();
     }

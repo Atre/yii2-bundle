@@ -9,24 +9,24 @@ namespace dezmont765\yii2bundle\models;
  */
 interface IExtendableActiveRecord
 {
-    public function getSubTableMainClass();
+    public function getDependentModelsParentClass();
 
 
-    public static function dummySubTablesClass();
+    public static function dummyDependentModelsClass();
 //
 //
-    public static function dummySubTablesView();
+    public static function dummyDependentModelsView();
 
 
-    public static function subTablesClasses();
+    public static function dependentModelsClasses();
 
 
-    public static function subTablesViews();
+    public static function dependentModelsViews();
 
 
-    public static function subTablesRelationFields();
+    public static function dependentModelsRelationFields();
 
 
-    public static function subTablesBaseView();
+    public static function dependentModelsBaseView();
 
 }

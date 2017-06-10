@@ -40,8 +40,8 @@ abstract class ADependentActiveRecord extends MainActiveRecord implements IDepen
 
     public function saveConnectedModel() {
         /** @var MainActiveRecord $main_class */
-        $main_class = $this->getConnectedModelClass();
-        $main_attribute = $this->getConnectedModelAttribute();
+        $main_class = $this->getExtendableModelClass();
+        $main_attribute = $this->getExtendableModelAttribute();
         if(!$this->$main_attribute instanceof $main_class) {
             $this->$main_attribute =
                 $main_class::findOne([$this->getMainModelBindingAttribute() => $this->getSelfBindingAttribute()]);
@@ -88,8 +88,8 @@ abstract class ADependentActiveRecord extends MainActiveRecord implements IDepen
 
 
     public function insertInternal($attributes = null) {
-        $main_class = $this->getConnectedModelClass();
-        $main_attribute = $this->getConnectedModelAttribute();
+        $main_class = $this->getExtendableModelClass();
+        $main_attribute = $this->getExtendableModelAttribute();
         $this->saveConnectedModel();
         if($this->$main_attribute instanceof $main_class && $this->tableName() == $this->$main_attribute->tableName()) {
             return $this->saveInternal(true);
@@ -101,8 +101,8 @@ abstract class ADependentActiveRecord extends MainActiveRecord implements IDepen
 
 
     public function updateInternal($attributes = null) {
-        $main_class = $this->getConnectedModelClass();
-        $main_attribute = $this->getConnectedModelAttribute();
+        $main_class = $this->getExtendableModelClass();
+        $main_attribute = $this->getExtendableModelAttribute();
         $this->saveConnectedModel();
         if($this->$main_attribute instanceof $main_class && $this->tableName() == $this->$main_attribute->tableName()) {
             return $this->saveInternal(false);
@@ -115,8 +115,8 @@ abstract class ADependentActiveRecord extends MainActiveRecord implements IDepen
 
     public function afterFind() {
         parent::afterFind();
-        $main_class = $this->getConnectedModelClass();
-        $main_attribute = $this->getConnectedModelAttribute();
+        $main_class = $this->getExtendableModelClass();
+        $main_attribute = $this->getExtendableModelAttribute();
         if($this->$main_attribute instanceof $main_class) {
             $this->setAttributes($this->$main_attribute->attributes);
             $this->setOldAttributes($this->$main_attribute->attributes);
@@ -126,8 +126,8 @@ abstract class ADependentActiveRecord extends MainActiveRecord implements IDepen
 
     public function beforeSave($insert) {
         if(parent::beforeSave($insert)) {
-            $main_class = $this->getConnectedModelClass();
-            $main_attribute = $this->getConnectedModelAttribute();
+            $main_class = $this->getExtendableModelClass();
+            $main_attribute = $this->getExtendableModelAttribute();
             if($this->$main_attribute instanceof $main_class) {
                 $this->attributes = $this->$main_attribute->attributes;
             }

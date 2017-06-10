@@ -42,11 +42,13 @@ class UpdateWithDynamicChildrenAction extends DynamicChildrenAction
     }
 
 
-    public function run($id = null) {
-        parent::run($id);
+    public function run() {
         $this->findChildModels();
         $this->loadChildModelsFromRequest();
-        $this->save();
+        $result = $this->save();
+        if($result !== null) {
+            return $result;
+        }
         return $this->controller->render($this->getView(), ['model' => $this->model]);
     }
 }

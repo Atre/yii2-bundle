@@ -41,6 +41,7 @@ abstract class DynamicChildrenProcessor extends Object implements IDynamicChildr
 
     public $child_models = [];
     public $category = null;
+    public $model = null;
     /**
      * @var AExtendableActiveRecord|string $child_models_parent_class
      * This is "extendable" models class string
@@ -141,6 +142,9 @@ abstract class DynamicChildrenProcessor extends Object implements IDynamicChildr
     }
 
 
+
+
+
     private function initialValues() {
         return [
             self::CHILD_MODELS => [],
@@ -171,7 +175,7 @@ abstract class DynamicChildrenProcessor extends Object implements IDynamicChildr
         $this->setChildModelsSubClass($config[self::CHILD_MODELS_SUB_CLASS]);
         $this->setChildBindingAttribute();
         $child_models_parent_class = $this->child_models_parent_class;
-        $this->child_models_basic_class = $child_models_parent_class::dummySubTablesClass();;
+        $this->child_models_basic_class = $child_models_parent_class::dummyDependentModelsClass();;
     }
 
 
@@ -289,5 +293,6 @@ abstract class DynamicChildrenProcessor extends Object implements IDynamicChildr
         }
     }
 
+    abstract public function getChildModelsMainClass();
 
 }

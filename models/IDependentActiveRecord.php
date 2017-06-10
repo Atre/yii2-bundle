@@ -14,10 +14,10 @@ interface IDependentActiveRecord
     /**
      * @return IExtendableActiveRecord
      */
-    public function getConnectedModelClass();
+    public function getExtendableModelClass();
 
 
-    public static function getConnectedModelAttribute();
+    public static function getExtendableModelAttribute();
 
 
     public static function getParentBindingAttribute();

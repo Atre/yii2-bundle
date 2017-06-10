@@ -21,7 +21,7 @@ class MassDeleteAction extends MainAction
 
     public function run() {
         if(isset($_POST[$this->param])) {
-            $item_keys = \Yii::$app->request->post();
+            $item_keys = \Yii::$app->request->post($this->param);
             foreach($item_keys as $key) {
                 try {
                     $model_class = $this->getModelClass();
@@ -40,7 +40,10 @@ class MassDeleteAction extends MainAction
                 }
             }
         }
-        return $this->controller->redirect(['list']);
+        if($this->is_redirect) {
+            return $this->controller->redirect($this->redirect_url);
+        }
+        else return true;
     }
 
 }

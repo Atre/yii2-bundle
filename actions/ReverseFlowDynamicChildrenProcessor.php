@@ -30,18 +30,7 @@ class ReverseFlowDynamicChildrenProcessor extends DynamicChildrenProcessor
     }
 
 
-    /**
-     * @inheritdoc
-     */
-    public function afterLoadChildModels() {
-        parent::afterLoadChildModels();
-        if($this->child_models_sub_class) {
-            $child_models_sub_class = $this->child_models_sub_class;
-            if(empty($this->child_models)) {
-                $this->child_models[] = new $child_models_sub_class;
-            }
-        }
-    }
+
 
     /**
      * @inheritdoc
@@ -49,7 +38,7 @@ class ReverseFlowDynamicChildrenProcessor extends DynamicChildrenProcessor
     protected function findChildModelsViaSubRelation($parent_model) {
         $child_models_sub_class = $this->child_models_sub_class;
         if($child_models_sub_class !== null) {
-            $relation = $child_models_sub_class::getConnectedModelAttribute();
+            $relation = $child_models_sub_class::getExtendableModelAttribute();
             $this->findChildModelsInternal($child_models_sub_class, $parent_model, $relation,
                                            $child_models_sub_class);
         }
@@ -61,11 +50,16 @@ class ReverseFlowDynamicChildrenProcessor extends DynamicChildrenProcessor
     protected function findChildModelsViaMainRelation($parent_model) {
         $child_models_sub_class = $this->child_models_sub_class;
         if($child_models_sub_class !== null) {
-            $relation = $child_models_sub_class::getConnectedModelAttribute();
+            $relation = $child_models_sub_class::getExtendableModelAttribute();
             $this->findChildModelsInternal($child_models_sub_class,
                                            $parent_model,
                                            $relation,
                                            $this->child_models_parent_class);
         }
+    }
+
+
+    public function getChildModelsMainClass() {
+        return $this->child_models_sub_class;
     }
 }
