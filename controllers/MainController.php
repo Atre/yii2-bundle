@@ -1,5 +1,4 @@
 <?php
-
 namespace dezmont765\yii2bundle\controllers;
 
 use dezmont765\yii2bundle\filters\LayoutFilter;
@@ -107,7 +106,8 @@ class MainController extends Controller
     }
 
 
-    public function selectionList($model_class, $attribute, array $additional_criteria = [], callable $return_wrap = null) {
+    public function selectionList($model_class, $attribute, array $additional_criteria = [],
+                                  callable $return_wrap = null) {
         /** @var MainActiveRecord $model_class
          * @var MainActiveRecord $model
          */
@@ -147,7 +147,8 @@ class MainController extends Controller
     }
 
 
-    public function selectionByAttribute($model_class, $attribute, $show_attribute, $additional_criteria = null, callable $return_wrap = null) {
+    public function selectionByAttribute($model_class, $attribute, $show_attribute, $additional_criteria = null,
+                                         callable $return_wrap = null) {
         /** @var MainActiveRecord $model_class
          * @var MainActiveRecord $model
          */
@@ -188,19 +189,17 @@ class MainController extends Controller
      * @param array $models_without_id
      * @return array|null
      */
-    public function ajaxValidationMultiple($models, $attributes, $models_without_id = []) {
+    public function ajaxValidationMultiple($models, $attributes = null) {
         $result = null;
         if(Yii::$app->request->isAjax) {
             foreach($models as $model) {
                 $model->load(Yii::$app->request->post());
             }
             Yii::$app->response->format = Response::FORMAT_JSON;
-            $result = PartialActiveForm::validationMultiple($models, $attributes, $models_without_id);
+            $result = PartialActiveForm::ajaxValidationMultiple($result,$models, $attributes);
         }
         return $result;
     }
-
-
 
 
     public function getModelClass() {
