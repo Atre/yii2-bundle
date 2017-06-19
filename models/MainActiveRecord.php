@@ -27,6 +27,7 @@ use yii\helpers\ArrayHelper;
  */
 class MainActiveRecord extends ActiveRecord
 {
+    const PAGE_SIZE = 15;
     public $is_saved = null;
     public $is_deleted = null;
     private $transaction = null;

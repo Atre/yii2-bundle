@@ -1,4 +1,5 @@
 <?php
+
 namespace dezmont765\yii2bundle\actions;
 
 use dezmont765\yii2bundle\models\MainActiveRecord;
@@ -15,8 +16,12 @@ use Yii;
 class ListAction extends MainAction
 {
     const SEARCH_QUERY_FUNCTION = 'search_query_function';
+    const ADDITIONAL_SORTING = 'additional_sorting';
+    const DEFAULT_ORDER = 'default_order';
 
     public $search_query_function = 'baseSearchQuery';
+    public $additional_sorting = [];
+    public $default_order = null;
 
 
     public function run() {
@@ -27,8 +32,9 @@ class ListAction extends MainAction
             $additional_params[$additional_param] = Yii::$app->request->get($additional_param);
         }
         $search_model = new $search_class;
-        $search_model->load(Yii::$app->request->queryParams);
-        $dataProvider = $search_model->search($search_model->{$this->search_query_function}());
+        $dataProvider =
+            $search_model->search(Yii::$app->request->queryParams, $search_model->{$this->search_query_function}(),
+                                  $this->additional_sorting, $this->default_order);
         return $this->controller->{$this->render_method}($this->getView(), [
                                                                                'searchModel' => $search_model,
                                                                                'dataProvider' => $dataProvider,

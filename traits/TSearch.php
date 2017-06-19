@@ -1,4 +1,5 @@
 <?php
+
 namespace dezmont765\yii2bundle\traits;
 
 use yii\data\ActiveDataProvider;
@@ -15,23 +16,26 @@ trait TSearch
     /**
      * Creates data provider instance with search query applied
      *
+     * @param array $data
      * @param ActiveQuery $query
      * @param array $additional_sorting
      * @param $default_order
      * @return ActiveDataProvider
      * @internal param array $params
      */
-    public function search(ActiveQuery $query = null, array $additional_sorting = [], $default_order = null) {
+    public function search($data = [], ActiveQuery $query = null, array $additional_sorting = [], $default_order = null) {
+        $this->load($data);
         iF($query == null) {
             $query = self::find();
         }
         $data_provider = new ActiveDataProvider([
                                                     'query' => $query,
-                                                    'pagination' => ['pageSize' => 15]
+                                                    'pagination' => ['pageSize' => static::PAGE_SIZE],
                                                 ]);
         $data_provider->sort->attributes += $additional_sorting;
-        if($default_order !== null)
+        if($default_order !== null) {
             $data_provider->sort->defaultOrder = $default_order;
+        }
         return $data_provider;
     }
 
@@ -39,7 +43,5 @@ trait TSearch
     /**
      * @return ActiveQuery
      */
-    public function baseSearchQuery() {
-
-    }
+    abstract public function baseSearchQuery();
 }
