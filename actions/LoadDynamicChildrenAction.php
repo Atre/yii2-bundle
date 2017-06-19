@@ -36,7 +36,7 @@ class LoadDynamicChildrenAction extends DynamicChildrenAction
             $child_models_parent_class = $field->child_models_parent_class;
             $fields_html .=
                 $this->controller->renderAjax($child_models_parent_class::dependentModelsBaseView(), [
-                    'view' => $child_models_parent_class::getSubTableViewByCategory($field->category),
+                    'view' => $child_models_parent_class::getDependentModelViewByCategory($field->category),
                     'models' => $field->child_models,
                     'processor' => $field
                 ]);

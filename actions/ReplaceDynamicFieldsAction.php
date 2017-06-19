@@ -48,7 +48,7 @@ class ReplaceDynamicFieldsAction extends LoadDynamicChildrenAction
             $form = PartialActiveForm::begin();
             $sub_model_parent_class = $fields->child_models_parent_class;
             $fields_html =
-                $this->controller->renderAjax($sub_model_parent_class::getSubTableViewByCategory($fields->category), [
+                $this->controller->renderAjax($sub_model_parent_class::getDependentModelViewByCategory($fields->category), [
                     'model' => $fields->child_models[$this->key],
                     'form' => $form,
                     'key' => $this->key,

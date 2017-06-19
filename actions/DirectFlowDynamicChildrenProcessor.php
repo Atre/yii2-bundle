@@ -18,7 +18,7 @@ class DirectFlowDynamicChildrenProcessor extends DynamicChildrenProcessor
     protected function findChildModelsViaSubRelation($parent_model) {
         $child_models_parent_class = $this->child_models_parent_class;
         if($this->category) {
-            $relation = $child_models_parent_class::getSubTableRelationFieldByCategory($this->category);
+            $relation = $child_models_parent_class::getDependentModelRelationFieldByCategory($this->category);
             $this->findChildModelsInternal($child_models_parent_class, $parent_model, $relation,
                                            $this->child_models_sub_class);
         }

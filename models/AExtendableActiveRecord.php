@@ -18,17 +18,17 @@ abstract class AExtendableActiveRecord extends MainActiveRecord implements IExte
     /**
      * @return \dezmont765\yii2bundle\models\ADependentActiveRecord
      */
-    public function getSubModel() {
+    public function getDependentModel() {
         $parent_class = $this->getDependentModelsParentClass();
         if($this->sub_model instanceof $parent_class) {
             return $this->sub_model;
         }
-        $sub_table_relation_field = $this->getSubTableRelationFieldByCategory($this->category);
+        $sub_table_relation_field = $this->getDependentModelRelationFieldByCategory($this->category);
         if($sub_table_relation_field === null) {
             return null;
         }
         $this->sub_model = $this->$sub_table_relation_field;
-        $sub_table_class = self::getSubTableClassByCategory($this->category);
+        $sub_table_class = self::getDependentModelClassByCategory($this->category);
         if(!$this->sub_model instanceof $sub_table_class) {
             $this->sub_model = new $sub_table_class;
         }
@@ -41,7 +41,7 @@ abstract class AExtendableActiveRecord extends MainActiveRecord implements IExte
     }
 
 
-    public static function getSubTableRelationFieldByCategory($category) {
+    public static function getDependentModelRelationFieldByCategory($category) {
         $sub_table_relation_fields = static::dependentModelsRelationFields();
         if(isset($sub_table_relation_fields[$category])) {
             return $sub_table_relation_fields[$category];
@@ -56,7 +56,7 @@ abstract class AExtendableActiveRecord extends MainActiveRecord implements IExte
      * @param $category
      * @return ADependentActiveRecord|string
      */
-    public static function getSubTableClassByCategory($category) {
+    public static function getDependentModelClassByCategory($category) {
         if(isset(static::dependentModelsClasses()[$category])) {
             return static::dependentModelsClasses()[$category];
         }
@@ -67,7 +67,7 @@ abstract class AExtendableActiveRecord extends MainActiveRecord implements IExte
     }
 
 
-    public static function getSubTableViewByCategory($category) {
+    public static function getDependentModelViewByCategory($category) {
         if(isset(static::dependentModelsViews()[$category])) {
             return static::dependentModelsViews()[$category];
         }
@@ -75,7 +75,7 @@ abstract class AExtendableActiveRecord extends MainActiveRecord implements IExte
     }
 
 
-    public function getSubTableFormNameByCategory($category) {
+    public static function getDependentModelFormNameByCategory($category) {
         /**
          * @var $model_class MainActiveRecord
          */

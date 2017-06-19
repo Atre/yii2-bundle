@@ -204,7 +204,7 @@ abstract class DynamicChildrenProcessor extends Object implements IDynamicChildr
         if($this->category) {
             $child_models_parent_class = $this->child_models_parent_class;
             $this->child_models_sub_class =
-                $child_models_sub_class ?? $child_models_parent_class::getSubTableClassByCategory($this->category);
+                $child_models_sub_class ?? $child_models_parent_class::getDependentModelClassByCategory($this->category);
         }
     }
 
