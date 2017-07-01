@@ -7,9 +7,10 @@
  * To change this template use File | Settings | File Templates.
  */
 /**
- * Class Alert
+ * Class MessageLogger
  * Nice class to show flash messages to the user.
  */
+
 namespace dezmont765\yii2bundle\components;
 
 use dezmont765\yii2bundle\widgets\alert\AlertWidget;
@@ -18,8 +19,9 @@ use RecursiveArrayIterator;
 use RecursiveIteratorIterator;
 use yii;
 use yii\base\ErrorException;
+use yii\console\Application;
 
-class Alert extends yii\base\Component
+class MessageLogger extends yii\base\Component
 {
 
 
@@ -100,7 +102,7 @@ class Alert extends yii\base\Component
      * Adds an alert to proper store by status
      * @param null $alerts
      */
-    public static function addAlert($status, $msg, $details = null, &$alerts = null) {
+    public static function addMessage($status, $msg, $details = null, &$alerts = null) {
         $alerts = &self::getAlertsRef($alerts);
         $assertion = true;
         if(Yii::$app->request instanceof yii\web\Request) {
@@ -108,6 +110,9 @@ class Alert extends yii\base\Component
         }
         if(Yii::$app->request instanceof yii\console\Request) {
             $assertion = true;
+        }
+        if(Yii::$app instanceof Application) {
+            echo $msg, "\n";
         }
         if($assertion) {
             $buffer = self::getAlertStoreByStatus($status, $alerts);
@@ -118,7 +123,7 @@ class Alert extends yii\base\Component
     }
 
 
-    public static function popAlert($status, &$alerts = null) {
+    public static function popMessage($status, &$alerts = null) {
         $alerts = &self::getAlertsRef($alerts);
         $buffer = self::getAlertStoreByStatus($status, $alerts);
         $last_message = array_slice($buffer, 0, -1);
@@ -126,66 +131,86 @@ class Alert extends yii\base\Component
     }
 
 
-    public static function popSuccess(&$alerts = null) {
+    public static function popInfo(&$alerts = null) {
         $alerts = &self::getAlertsRef($alerts);
-        return self::popAlert(self::MESSAGE, $alerts);
+        return self::popMessage(self::MESSAGE, $alerts);
     }
 
 
     public static function popError(&$alerts = null) {
         $alerts = &self::getAlertsRef($alerts);
-        return self::popAlert(self::ERROR, $alerts);
+        return self::popMessage(self::ERROR, $alerts);
     }
 
 
     public static function popWarning(&$alerts = null) {
         $alerts = &self::getAlertsRef($alerts);
-        return self::popAlert(self::WARNING, $alerts);
+        return self::popMessage(self::WARNING, $alerts);
     }
 
 
     /**
-     * @param $msg
+     * @param $message
      * @param null $details
      * Wraps the addAlert with predefined status
      * @param null $alerts
+     * @internal param $msg
      */
-    public static function addSuccess($msg, $details = null, &$alerts = null) {
+    public static function info($message, $details = null, &$alerts = null) {
         $alerts = &self::getAlertsRef($alerts);
-        if(!empty($msg)) {
-            Yii::info($msg . ' : ' . json_encode($details));
-            self::addAlert(self::MESSAGE, $msg, $details, $alerts);
+        if(!empty($message)) {
+            $message = self::transformMessage($message, $details);
+            Yii::info($message, 'debug');
+            self::addMessage(self::MESSAGE, $message, $details, $alerts);
         }
     }
 
 
     /**
-     * @param $msg
+     * @param $message
      * @param null $details
      * Wraps the addAlert with predefined status
      * @param null $alerts
      */
-    public static function addWarning($msg, $details = null, &$alerts = null) {
+    public static function warning($message, $details = null, &$alerts = null) {
         $alerts = &self::getAlertsRef($alerts);
-        if(!empty($msg)) {
-            Yii::warning($msg . ' : ' . json_encode($details));
-            self::addAlert(self::WARNING, $msg, $details, $alerts);
+        if(!empty($message)) {
+            $message = self::transformMessage($message, $details);
+            Yii::warning($message, 'debug');
+            self::addMessage(self::WARNING, $message, $details, $alerts);
         }
     }
 
 
     /**
-     * @param $msg
+     * @param $message
      * @param null $details
      * Wraps the addAlert with predefined status
      * @param null $alerts
      */
-    public static function addError($msg, $details = null, &$alerts = null) {
+    public static function error($message, $details = null, &$alerts = null) {
         $alerts = &self::getAlertsRef($alerts);
-        if(!empty($msg)) {
-            Yii::error($msg . ' : ' . json_encode($details));
-            self::addAlert(self::ERROR, $msg, $details, $alerts);
+        if(!empty($message)) {
+            $message = self::transformMessage($message, $details);
+            Yii::error($message, 'debug');
+            self::addMessage(self::ERROR, $message, $details, $alerts);
         }
+    }
+
+
+    private static function transformMessage($message, $details) {
+        if(is_array($message)) {
+            if(count($message) >= 2) {
+                $message = vsprintf($message[0], array_slice($message, 1));
+            }
+            else {
+                $message = $message[0] ?? null;
+            }
+        }
+        if(is_array($details) && !empty($details)) {
+            $message .= ' : ' . json_encode($details);
+        }
+        return $message;
     }
 
 

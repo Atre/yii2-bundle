@@ -1,7 +1,7 @@
 <?php
 namespace dezmont765\yii2bundle\widgets\alert;
 
-use dezmont765\yii2bundle\components\Alert;
+use dezmont765\yii2bundle\components\MessageLogger;
 use dezmont765\yii2bundle\components\SafeArray;
 use Yii;
 
@@ -38,10 +38,10 @@ class AlertWidget extends \yii\base\Widget
 
     public static function messages() {
         return [
-            Alert::ERROR => Yii::t('messages', 'Your request failed with errors:'),
-            Alert::WARNING => Yii::t('messages', 'Your request ends with warnings:'),
-            Alert::MESSAGE => Yii::t('messages', 'Your request ends successfully'),
-            Alert::NONE => Yii::t('messages', 'Can not determine alert type'),
+            MessageLogger::ERROR => Yii::t('messages', 'Your request failed with errors:'),
+            MessageLogger::WARNING => Yii::t('messages', 'Your request ends with warnings:'),
+            MessageLogger::MESSAGE => Yii::t('messages', 'Your request ends successfully'),
+            MessageLogger::NONE => Yii::t('messages', 'Can not determine alert type'),
         ];
     }
 
@@ -50,7 +50,7 @@ class AlertWidget extends \yii\base\Widget
      * returns color by general status
      * */
     public function getColor() {
-        return self::$colors[Alert::getGeneralStatus($this->alerts)];
+        return self::$colors[MessageLogger::getGeneralStatus($this->alerts)];
     }
 
 
@@ -59,16 +59,16 @@ class AlertWidget extends \yii\base\Widget
      * returns message by general status
      */
     public function getGeneralMessage() {
-        $title_message = self::messages()[Alert::getGeneralStatus($this->alerts)];
+        $title_message = self::messages()[MessageLogger::getGeneralStatus($this->alerts)];
         return $title_message;
     }
 
 
     public static $colors = [
-        Alert::MESSAGE => 'success',
-        Alert::WARNING => 'warning',
-        Alert::ERROR => 'danger',
-        Alert::NONE => 'info'
+        MessageLogger::MESSAGE => 'success',
+        MessageLogger::WARNING => 'warning',
+        MessageLogger::ERROR => 'danger',
+        MessageLogger::NONE => 'info'
     ];
 
 
@@ -76,9 +76,9 @@ class AlertWidget extends \yii\base\Widget
         return $this->render($this->viewType, [
             'general_message' => $this->getGeneralMessage(),
             'general_color' => $this->getColor(),
-            'success_alerts' => $this->alerts[Alert::$stores[Alert::MESSAGE]],
-            'warning_alerts' =>$this->alerts[Alert::$stores[Alert::WARNING]],
-            'error_alerts' => $this->alerts[Alert::$stores[Alert::ERROR]],
+            'success_alerts' => $this->alerts[MessageLogger::$stores[MessageLogger::MESSAGE]],
+            'warning_alerts' => $this->alerts[MessageLogger::$stores[MessageLogger::WARNING]],
+            'error_alerts' => $this->alerts[MessageLogger::$stores[MessageLogger::ERROR]],
         ]);
     }
 

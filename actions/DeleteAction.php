@@ -1,7 +1,7 @@
 <?php
 namespace dezmont765\yii2bundle\actions;
 
-use dezmont765\yii2bundle\components\Alert;
+use dezmont765\yii2bundle\components\MessageLogger;
 use Exception;
 
 /**
@@ -25,7 +25,7 @@ class DeleteAction extends MainAction
             $model->delete();
         }
         catch(Exception $e) {
-            Alert::addError($this->error_message, $e->getMessage());
+            MessageLogger::error($this->error_message, $e->getMessage());
         }
         if($this->is_redirect) {
             return $this->controller->redirect($this->redirect_url);

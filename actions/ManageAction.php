@@ -1,7 +1,7 @@
 <?php
 namespace dezmont765\yii2bundle\actions;
 
-use dezmont765\yii2bundle\components\Alert;
+use dezmont765\yii2bundle\components\MessageLogger;
 
 /**
  * Created by PhpStorm.
@@ -73,7 +73,7 @@ abstract class ManageAction extends MainAction
 
     protected function onSuccessfulSave() {
         if($this->is_redirect) {
-            Alert::addSuccess('Item has been saved');
+            MessageLogger::info('Item has been saved');
             return $this->controller->redirect($this->successful_save_redirect_url);
         }
         else return null;
@@ -90,7 +90,7 @@ abstract class ManageAction extends MainAction
 
     private function onUnsuccessfulSave() {
         if($this->is_redirect) {
-            Alert::addError('Item has not been saved');
+            MessageLogger::error('Item has not been saved');
             return $this->controller->redirect($this->unsuccessful_save_redirect_url);
         }
         else return null;

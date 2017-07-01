@@ -1,5 +1,5 @@
 <?php
-use dezmont765\yii2bundle\components\Alert;
+use dezmont765\yii2bundle\components\MessageLogger;
 
 /**
  * @var $this \app\components\MainView
@@ -12,13 +12,13 @@ $widget = $this->context;
     <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span>
     </button>
     <? if(count($success_alerts)) : ?>
-        <?= Alert::recursiveFind($success_alerts, 'msg'); ?>
+        <?= MessageLogger::recursiveFind($success_alerts, 'msg'); ?>
     <? endif ?>
     <? if(count($warning_alerts)) : ?>
-        <?= Alert::recursiveFind($warning_alerts, 'msg'); ?>
+        <?= MessageLogger::recursiveFind($warning_alerts, 'msg'); ?>
     <? endif ?>
     <? if(count($error_alerts)) : ?>
-        <?= Alert::recursiveFind($error_alerts, 'msg'); ?>
+        <?= MessageLogger::recursiveFind($error_alerts, 'msg'); ?>
     <? endif ?>
 </div>
 <script>

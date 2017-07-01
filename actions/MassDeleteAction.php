@@ -1,7 +1,7 @@
 <?php
 namespace dezmont765\yii2bundle\actions;
 
-use dezmont765\yii2bundle\components\Alert;
+use dezmont765\yii2bundle\components\MessageLogger;
 use Exception;
 use yii\web\ForbiddenHttpException;
 
@@ -31,12 +31,12 @@ class MassDeleteAction extends MainAction
                     }
                     if($model) {
                         if($model->delete()) {
-                            Alert::addSuccess($this->success_message);
+                            MessageLogger::info($this->success_message);
                         }
                     }
                 }
                 catch(Exception $e) {
-                    Alert::addError($this->error_message, $e->getMessage());
+                    MessageLogger::error($this->error_message, $e->getMessage());
                 }
             }
         }

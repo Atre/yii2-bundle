@@ -8,7 +8,7 @@
 namespace dezmont765\yii2bundle\models;
 
 use DateTime;
-use dezmont765\yii2bundle\components\Alert;
+use dezmont765\yii2bundle\components\MessageLogger;
 use Exception;
 use ReflectionClass;
 use Yii;
@@ -164,8 +164,8 @@ class MainActiveRecord extends ActiveRecord
             }
         }
         catch(Exception $e) {
-            Alert::addError($e->getMessage(),
-                            ['class' => self::className(),
+            MessageLogger::error($e->getMessage(),
+                                 ['class' => self::className(),
                              'line' => $e->getLine(),
                              'file' => $e->getFile(),
                              'trace' => $e->getTraceAsString(),
@@ -175,7 +175,7 @@ class MainActiveRecord extends ActiveRecord
             $this->rollbackLocalTransaction();
             $this->is_saved = false;
         }
-        if($this->hasErrors() || count(Alert::getErrors()) || !$this->is_saved) {
+        if($this->hasErrors() || count(MessageLogger::getErrors()) || !$this->is_saved) {
             $this->rollbackLocalTransaction();
             $this->is_saved = false;
         }
@@ -196,8 +196,8 @@ class MainActiveRecord extends ActiveRecord
             }
         }
         catch(Exception $e) {
-            Alert::addError($e->getMessage(),
-                            ['class' => self::className(),
+            MessageLogger::error($e->getMessage(),
+                                 ['class' => self::className(),
                              'line' => $e->getLine(),
                              'file' => $e->getFile(),
                              'trace' => $e->getTraceAsString(),
@@ -207,7 +207,7 @@ class MainActiveRecord extends ActiveRecord
             $this->rollbackLocalTransaction();
             $this->is_deleted = false;
         }
-        if($this->hasErrors() || count(Alert::getErrors()) || !$this->is_deleted) {
+        if($this->hasErrors() || count(MessageLogger::getErrors()) || !$this->is_deleted) {
             $this->rollbackLocalTransaction();
             $this->is_deleted = false;
         }
