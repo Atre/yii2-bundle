@@ -29,8 +29,8 @@ class SaveDependentModelsBehavior extends Behavior
 
     public function afterSave() {
         if($this->owner instanceof AExtendableActiveRecord) {
-            $this->owner->subModel->{$this->child_binding_attribute} = $this->owner->{$this->parent_binding_attribute};
-            $this->owner->subModel->save();
+            $this->owner->dependentModel->{$this->child_binding_attribute} = $this->owner->{$this->parent_binding_attribute};
+            $this->owner->dependentModel->save();
         }
     }
 }

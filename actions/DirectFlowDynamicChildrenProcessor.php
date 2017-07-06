@@ -38,7 +38,7 @@ class DirectFlowDynamicChildrenProcessor extends DynamicChildrenProcessor
      */
     public function saveChildModels($parent_model) {
         foreach($this->child_models as &$child_model) {
-            $child_model->subModel->{$this->child_binding_attribute} = $parent_model->{$this->parent_binding_attribute};
+            $child_model->dependentModel->{$this->child_binding_attribute} = $parent_model->{$this->parent_binding_attribute};
             $child_model->save();
         }
     }
@@ -62,7 +62,7 @@ class DirectFlowDynamicChildrenProcessor extends DynamicChildrenProcessor
                 $this->child_models[$key]->attributes = $child_models_attributes_set;
                 $this->child_models[$key]->category = $this->category;
                 if(isset($child_models_sub_data[$key])) {
-                    $this->child_models[$key]->subModel->load($child_models_sub_data[$key]);
+                    $this->child_models[$key]->dependentModel->load($child_models_sub_data[$key]);
                 }
             }
         }

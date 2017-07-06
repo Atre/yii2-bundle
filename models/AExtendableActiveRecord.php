@@ -6,7 +6,7 @@ namespace dezmont765\yii2bundle\models;
  * Date: 17.04.2017
  * Time: 17:00
  * @property $category
- * @property MainActiveRecord $subModel
+ * @property MainActiveRecord $dependentModel
  */
 abstract class AExtendableActiveRecord extends MainActiveRecord implements IExtendableActiveRecord
 {
