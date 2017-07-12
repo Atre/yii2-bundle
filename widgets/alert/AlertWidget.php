@@ -38,10 +38,10 @@ class AlertWidget extends \yii\base\Widget
 
     public static function messages() {
         return [
-            Alert::ERROR => Yii::t('messages', 'Your request failed with errors:'),
-            Alert::WARNING => Yii::t('messages', 'Your request ends with warnings:'),
-            Alert::MESSAGE => Yii::t('messages', 'Your request ends successfully'),
-            Alert::NONE => Yii::t('messages', 'Can not determine alert type'),
+            Alert::ERROR => 'Your request failed with errors:',
+            Alert::WARNING => 'Your request ends with warnings:',
+            Alert::MESSAGE =>'Your request ends successfully',
+            Alert::NONE =>  'Can not determine alert type',
         ];
     }
 
