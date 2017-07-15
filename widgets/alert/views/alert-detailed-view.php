@@ -1,8 +1,10 @@
 <?php
 /**
- * @var $this \app\components\MainView
+ * @var $this MainView
  * @var $widget \dezmont765\yii2bundle\widgets\alert\AlertWidget
  */
+use dezmont765\yii2bundle\views\MainView;
+
 $widget = $this->context;
 ?>
 <div class="alert alert-<?= $general_color ?> in fade">

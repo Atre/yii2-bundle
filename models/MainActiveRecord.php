@@ -30,7 +30,6 @@ class MainActiveRecord extends ActiveRecord
     public $is_saved = null;
     public $is_deleted = null;
     private $transaction = null;
-    private $_oldAttributes;
     protected $_changed_attributes = [];
 
 
@@ -43,44 +42,6 @@ class MainActiveRecord extends ActiveRecord
         $this->_changed_attributes = $attributes;
     }
 
-
-    protected function updateInternal($attributes = null) {
-        if(!$this->beforeSave(false)) {
-            return false;
-        }
-        $values = $this->getDirtyAttributes($attributes);
-        if(empty($values)) {
-            $this->afterSave(false, $values);
-            return 0;
-        }
-        $condition = $this->getOldPrimaryKey(true);
-        $lock = $this->optimisticLock();
-        if($lock !== null) {
-            $values[$lock] = $this->$lock + 1;
-            $condition[$lock] = $this->$lock;
-        }
-        // We do not check the return value of updateAll() because it's possible
-        // that the UPDATE statement doesn't change anything and thus returns 0.
-        $rows = $this->updateAll($values, $condition);
-        if($lock !== null && !$rows) {
-            throw new StaleObjectException('The object being updated is outdated.');
-        }
-        if(isset($values[$lock])) {
-            $this->$lock = $values[$lock];
-        }
-        $changedAttributes = [];
-        foreach($values as $name => $value) {
-            $changedAttributes[$name] =
-                isset($this->_oldAttributes[$name])
-                // it is the additional check for case when an attribute was null
-                && array_key_exists($name, $this->_oldAttributes)
-                    ? $this->_oldAttributes[$name] : null;
-            $this->_oldAttributes[$name] = $value;
-        }
-        $this->changedAttributes = $changedAttributes;
-        $this->afterSave(false, $this->changedAttributes);
-        return $rows;
-    }
 
 
     public function searchByAttribute($attribute, $value, $is_strict = true, array $additional_criteria = []) {
@@ -166,12 +127,12 @@ class MainActiveRecord extends ActiveRecord
         catch(Exception $e) {
             MessageLogger::error($e->getMessage(),
                                  ['class' => self::className(),
-                             'line' => $e->getLine(),
-                             'file' => $e->getFile(),
-                             'trace' => $e->getTraceAsString(),
-                             'id' => $this->id,
-                             'isNewRecord' => $this->isNewRecord,
-                             'errors' => $this->errors]);
+                                  'line' => $e->getLine(),
+                                  'file' => $e->getFile(),
+                                  'trace' => $e->getTraceAsString(),
+                                  'id' => $this->id,
+                                  'isNewRecord' => $this->isNewRecord,
+                                  'errors' => $this->errors]);
             $this->rollbackLocalTransaction();
             $this->is_saved = false;
         }
@@ -198,12 +159,12 @@ class MainActiveRecord extends ActiveRecord
         catch(Exception $e) {
             MessageLogger::error($e->getMessage(),
                                  ['class' => self::className(),
-                             'line' => $e->getLine(),
-                             'file' => $e->getFile(),
-                             'trace' => $e->getTraceAsString(),
-                             'id' => $this->id,
-                             'isNewRecord' => $this->isNewRecord,
-                             'errors' => $this->errors]);
+                                  'line' => $e->getLine(),
+                                  'file' => $e->getFile(),
+                                  'trace' => $e->getTraceAsString(),
+                                  'id' => $this->id,
+                                  'isNewRecord' => $this->isNewRecord,
+                                  'errors' => $this->errors]);
             $this->rollbackLocalTransaction();
             $this->is_deleted = false;
         }

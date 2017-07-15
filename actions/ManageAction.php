@@ -38,32 +38,33 @@ abstract class ManageAction extends MainAction
     public function run($id = null) {
         $model_class = $this->modelClassRetrieving();
         $model = $this->modelRetrieving($model_class, $id);
-        $this->beforeValidation($model);
-        if($this->is_ajax_validation) {
-            $result = parent::ajaxValidation($model);
-            if($result !== null) {
-                return $result;
-            }
-        }
-        $this->controller->checkAccess($this->permission, ['model' => $model]);
-        if($this->is_load_from_post) {
-            if($model->load(\Yii::$app->request->post())) {
-                $should_model_be_saved = true;
-            }
-            else $should_model_be_saved = false;
-        }
-        else $should_model_be_saved = true;
-        if($should_model_be_saved) {
-            if($model->save()) {
-                $response = $this->successfulSave($model);
-                if(!empty($response)) {
-                    return $response;
+        if($this->beforeValidation($model)) {
+            if($this->is_ajax_validation) {
+                $result = parent::ajaxValidation($model);
+                if($result !== null) {
+                    return $result;
                 }
             }
-            else {
-                $response = $this->unsuccessfulSave($model);
-                if(!empty($response)) {
-                    return $response;
+            $this->controller->checkAccess($this->permission, ['model' => $model]);
+            if($this->is_load_from_post) {
+                if($model->load(\Yii::$app->request->post())) {
+                    $should_model_be_saved = true;
+                }
+                else $should_model_be_saved = false;
+            }
+            else $should_model_be_saved = true;
+            if($should_model_be_saved) {
+                if($model->save()) {
+                    $response = $this->successfulSave($model);
+                    if(!empty($response)) {
+                        return $response;
+                    }
+                }
+                else {
+                    $response = $this->unsuccessfulSave($model);
+                    if(!empty($response)) {
+                        return $response;
+                    }
                 }
             }
         }
@@ -82,7 +83,7 @@ abstract class ManageAction extends MainAction
 
     private function successfulSave($model) {
         if(is_callable($this->on_successful_save)) {
-            return call_user_func_array($this->on_successful_save,[$model]);
+            return call_user_func_array($this->on_successful_save, [$model]);
         }
         else return $this->onSuccessfulSave();
     }
@@ -99,7 +100,7 @@ abstract class ManageAction extends MainAction
 
     private function unsuccessfulSave($model) {
         if(is_callable($this->on_unsuccessful_save)) {
-            return call_user_func_array($this->on_unsuccessful_save,[$model]);
+            return call_user_func_array($this->on_unsuccessful_save, [$model]);
         }
         else return $this->onUnsuccessfulSave();
     }
@@ -137,8 +138,9 @@ abstract class ManageAction extends MainAction
 
     private function beforeValidation(&$model) {
         if(is_callable($this->on_before_validation)) {
-            call_user_func_array($this->on_before_validation, [&$model]);
+            return call_user_func_array($this->on_before_validation, [&$model]);
         }
+        else return true;
     }
 
 
